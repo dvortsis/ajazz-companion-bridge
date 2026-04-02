@@ -1,0 +1,8 @@
+Target: Ajazz AKP05 Bridge to Bitfocus Companion 4.2.6
+Context:
+- Satellite 2.0 Protocol: Requires DEVICEID=... and PRODUCT_NAME=...
+- Handshake sequence: Wait for 'BEGIN', then send 'ADD-DEVICE'.
+- Heartbeat: Must respond to 'PING' with 'PONG'.
+- Performance: sharp processing MUST be off-thread (image-worker.js).
+- HID: Report ID 0x00 followed by 1024-byte payload.
+- Success Metric: Terminal must show 'ADD-DEVICE OK' and 'BRIGHTNESS' without 'Lost. Reconnecting'.
