@@ -1,22 +1,10 @@
 /**
- * MAIN ENGINE — Ajazz / Mirabox Companion Bridge (index.js)
+ * index.js — Main program: connects your deck to Bitfocus Companion over the network.
  *
- * This file is the main program that connects your physical USB control surface to Bitfocus Companion
- * over the network. Companion (on your PC) exposes the Satellite protocol: a simple text-based API
- * over TCP. This process uses the `node-hid` library to talk USB (HID reports) on one side and a TCP
- * socket to Companion on the other—so the bridge acts as a translator the two systems do not need
- * to know about each other directly.
+ * Outbound: Companion says which key image to show; we prepare it and send it over USB.
+ * Inbound: The deck sends “you pressed this”; we turn that into Companion key presses or knob spins.
  *
- * Why two paths? USB delivers small binary packets when you press keys or when we push image data to
- * the screen. Companion speaks plain-text lines like KEY-PRESS and BITMAP. This file orchestrates both.
- *
- * Rough data flow:
- *   • Images: Companion sends BITMAP lines → we decode JPEG off-thread (image-worker.js) → HID writes
- *     chunk the picture to the correct LCD region (devices.js maps key indices to hardware slots).
- *   • Input: Device sends a HID report → parser.js decodes bytes into event names → devices.js maps
- *     those to Companion key indices → we send KEY-PRESS / KEY-ROTATE lines with CONTROLID="row/col".
- *
- * Configuration: `.env` (loaded via dotenv) can set Companion host/port and pacing; see env vars below.
+ * Optional settings: `.env` (host, port, delays, etc.).
  */
 'use strict';
 
@@ -65,10 +53,10 @@ function companionKeyToMirajazzHw(k) {
   return mapPositionOpenDeck(k, false);
 }
 
-/** HW → Companion: match LCD/touch HW via VISUAL_MAP + INPUT_CORRECTION_MAP; encoder HW 15–22 passthrough. */
+/** Map a hardware screen index back to a Companion key index (rare code paths). */
 function mirajazzHwToCompanion(hw) {
   const h = hw | 0;
-  for (let i = 0; i < 15; i++) {
+  for (let i = 0; i < 32; i++) {
     const match = Object.keys(INPUT_CORRECTION_MAP).some(
       (key) => INPUT_CORRECTION_MAP[key] === i && VISUAL_MAP[key] === h
     );
@@ -78,21 +66,15 @@ function mirajazzHwToCompanion(hw) {
   return h;
 }
 
+/** Companion key index → draw slot from devices.js (VISUAL_MAP). */
 function mapPositionOpenDeck(index, isInput) {
   if (isInput) return mirajazzHwToCompanion(index);
   return getHwScreenFromCompanionKey(index | 0);
 }
 
 /**
- * HID image path mirrors reference_mirajazz device.rs (reference_opendeck does not reimplement BAT).
- *
- * PID 0x3004 (Kind::Akp05E, reference_opendeck mappings.rs): image_format() is 112×112 JPEG @ protocol v3
- * (same helper for all pv3 kinds — no separate 72/100 path in repo). set_button_image → mirajazz only.
- *
- * BAT: mirajazz send_image always uses two 0x00 bytes at vec indices 9–10 after "BAT", then BE length, then key+1.
- * There is no 0x3004-specific "length immediately after BAT" layout in OpenDeck or mirajazz.
- *
- * Between chunks: setTimeout when delay > 0; setImmediate when 0 so the event loop is not starved.
+ * Sending pictures over USB: each chunk is up to 1024 bytes of image data in a 1025-byte HID report.
+ * Optional pause between chunks: AKP05_HID_WRITE_DELAY_MS.
  */
 const HID_PACKET_PAYLOAD = 1024;
 const HID_REPORT_LEN = HID_PACKET_PAYLOAD + 1;
@@ -117,7 +99,7 @@ console.log(
   'ms default 0 (set AKP05_HID_WRITE_DELAY_MS to add pacing)'
 );
 
-/** device.rs write_extended_data: payload.resize(1 + packet_size, 0) → 1025 bytes total. */
+/** Build one HID output report (leading byte + payload, padded to fixed length). */
 function buildExtendedReport(byteValues) {
   const buf = Buffer.alloc(HID_REPORT_LEN, 0);
   const src = Buffer.from(byteValues);
@@ -125,10 +107,7 @@ function buildExtendedReport(byteValues) {
   return buf;
 }
 
-/**
- * device.rs set_brightness — 12-byte payload: CRT\\0\\0LIG\\0\\0 then percent at index 11 (mirajazz vec last byte).
- * @param {number} percent 0–100
- */
+/** Backlight / brightness command (0–100%). */
 function buildLigBrightnessReport(percent) {
   const p = Math.max(0, Math.min(100, Number(percent) | 0));
   return buildExtendedReport([
@@ -140,11 +119,13 @@ function buildLigBrightnessReport(percent) {
 let companionBrightnessPercent = 100;
 
 /**
- * device.rs send_image first packet — length is image_data.len() only; key+1 is separate at index 13.
+ * First packet of an image transfer: JPEG size plus which hardware slot should receive it.
+ * Touch strip: the four zones use Virtual IDs in VISUAL_MAP (often 100–103, or 0–3 here) so strip art does
+ * not overwrite main LCD slots (5–14). When sending the combined 800×112 strip, we pass slot 0 into this
+ * function so the device paints the wide image on the physical touch bar (see scheduleHidWrites).
  */
 function buildBatPreambleReport(imageDataByteLength, keyIdxZeroBased) {
   const len = imageDataByteLength >>> 0;
-  /** mirajazz send_image: BAT byte is key+1; HW 5–14 (LCD rows), HW 0–3 (touch strip). */
   const hw = Math.max(0, Math.min(23, Number(keyIdxZeroBased) | 0));
   const key = hw + 1;
   return buildExtendedReport([
@@ -165,7 +146,7 @@ function buildBatPreambleReport(imageDataByteLength, keyIdxZeroBased) {
   ]);
 }
 
-/** device.rs flush STP packet */
+/** Marks the end of the image data stream. */
 function buildStpReport() {
   return buildExtendedReport([0x00, 0x43, 0x52, 0x54, 0x00, 0x00, 0x53, 0x54, 0x50]);
 }
@@ -186,7 +167,7 @@ function chunkImagePayloadReports(imageBytes) {
 const BITMAP_RE = /KEY=(\d+).*BITMAP="([^"]*)"/;
 const MAX_PENDING_IMAGES = 24;
 
-/** Same as reference_companion-satellite satellite/src/client/client.ts PING_INTERVAL */
+/** How often we ping Companion on the TCP link (milliseconds). */
 const SATELLITE_PING_INTERVAL_MS = 100;
 
 /** Set when a registry profile is matched and HID is opened; drives ADD-DEVICE and KEY-PRESS/ROTATE lines. */
@@ -198,7 +179,7 @@ function sanitizeSatelliteDeviceId(id) {
   return String(id).replace(/"/g, '').trim();
 }
 
-/** Legacy grid position as row/col string (companion-satellite client.ts keyDown KEY / CONTROLID). */
+/** Companion key index → "row/col" text for Satellite KEY-PRESS / KEY-ROTATE lines. */
 function companionKeyToRowColString(keyIdx) {
   const k = keyIdx | 0;
   const cols = activeDeviceConfig ? activeDeviceConfig.keysPerRow : 5;
@@ -207,10 +188,7 @@ function companionKeyToRowColString(keyIdx) {
   return `${row}/${col}`;
 }
 
-/**
- * Outbound lines match CompanionSatelliteClient.sendMessage(): KEY-PRESS / KEY-ROTATE (not KEY-STATE — that is server→client draw).
- * PRESSED uses 1/0; DEVICEID and KEY/CONTROLID use double quotes like the reference client.
- */
+/** One KEY-PRESS line for Companion (down or up). */
 function buildKeyPressLine(keyIdx, pressed) {
   const id = sanitizeSatelliteDeviceId(activeDeviceConfig.id);
   const rc = companionKeyToRowColString(keyIdx);
@@ -226,10 +204,8 @@ function buildKeyRotateLine(keyIdx, directionRight) {
 }
 
 /**
- * Minimal legacy ADD-DEVICE (Companion ServiceSatelliteApi.#addDevice): only required layout fields.
- * KEYS_TOTAL / KEYS_PER_ROW from activeDeviceConfig; BITMAPS matches AKP05_IMAGE_SIZE.
- *
- * Buffer: ASCII line + 0x0a (LF), or CRLF if SATELLITE_HANDSHAKE_CRLF=1.
+ * Registers the deck with Companion: key count, columns, bitmap size. Line ends with LF or CRLF
+ * (SATELLITE_HANDSHAKE_CRLF=1).
  */
 function buildAddDeviceHandshakeBuffer() {
   if (!activeDeviceConfig) {
@@ -239,7 +215,6 @@ function buildAddDeviceHandshakeBuffer() {
   const keysPerRow = Number(activeDeviceConfig.keysPerRow) || 5;
   const id = sanitizeSatelliteDeviceId(activeDeviceConfig.id);
   const productName = String(activeDeviceConfig.name).replace(/"/g, '').trim();
-  /** ADD-DEVICE DEVICEID="…" first (quoted value on wire); PRODUCT_NAME quoted per Companion regex. */
   const line = [
     'ADD-DEVICE',
     `DEVICEID="${id}"`,
@@ -279,10 +254,10 @@ function scheduleHidRetry() {
     startHid();
   }, 5000);
 }
-/** Matches reference client.ts _handleReceivedData: split on \\n only, strip trailing \\r per line. */
+/** Incoming TCP text buffer; lines split on newline. */
 let visualLineBuf = '';
 
-/** companion-satellite client.ts: PING every 100ms once TCP connects (before/after BEGIN). */
+/** Timer for periodic PING lines to Companion. */
 let visualPingTimer = null;
 
 /** Only react to first BEGIN per connection. */
@@ -307,7 +282,7 @@ let imagePipelineBusy = false;
 const inflight = new Map();
 const imageQueue = [];
 
-/** FIFO of HID output reports; drained by drainHidQueue(). LIG keepalive is skipped while length > 0. */
+/** Outgoing USB packets queued here and sent one at a time (keeps the device from seeing mixed images). */
 const hidWriteQueue = [];
 let hidDrainRunning = false;
 
@@ -362,9 +337,7 @@ function onWorkerMessage(msg) {
   });
 }
 
-/**
- * One worker job at a time so JPEG → scheduleHidWrites stays ordered; do not parallelize without an image-level HID lock.
- */
+/** Process one BITMAP at a time so USB packets stay in order. */
 function pumpImageQueue() {
   if (imagePipelineBusy || imageQueue.length === 0) return;
   ensureImageWorker();
@@ -386,8 +359,12 @@ function pumpImageQueue() {
 }
 
 /**
- * device.rs send_image + write_image_data_reports + flush (single cached image):
- * one BAT extended write, payload chunks, one STP (mirajazz sends STP once after the for-loop over images).
+ * Send one image: preamble (BAT), all payload chunks, then end marker (STP). Optionally a brightness packet
+ * after touch-strip uploads.
+ *
+ * Virtual IDs & touch strip: VISUAL_MAP uses separate numbers for the four strip keys (e.g. 100–103, or 0–3)
+ * so strip drawing never targets the main LCD indices (5–14). For that combined strip image, we call
+ * buildBatPreambleReport with hardware slot 0 so the wide JPEG is applied to the physical touch bar.
  */
 function scheduleHidWrites(jpegBuffer, keyIdx, done) {
   if (!dev) {
@@ -402,19 +379,20 @@ function scheduleHidWrites(jpegBuffer, keyIdx, done) {
   }
 
   const imageBytes = Buffer.isBuffer(jpegBuffer) ? jpegBuffer : Buffer.from(jpegBuffer);
+  const isTouch = mirajazzKeyIdx >= 0 && mirajazzKeyIdx <= 3;
   const packs = [
-    buildBatPreambleReport(imageBytes.length, mirajazzKeyIdx),
+    buildBatPreambleReport(imageBytes.length, isTouch ? 0 : mirajazzKeyIdx),
     ...chunkImagePayloadReports(imageBytes),
     buildStpReport(),
   ];
-  if (mirajazzKeyIdx >= 0 && mirajazzKeyIdx <= 3) {
+  if (isTouch) {
     packs.push(buildLigBrightnessReport(companionBrightnessPercent));
   }
 
   enqueueHidReports(packs, done);
 }
 
-/** Enqueue one image’s HID packets in order; drainHidQueue serializes all dev.write (mutex for USB stream). */
+/** Add packets to the queue; they are written to USB strictly in order. */
 function enqueueHidReports(packs, onComplete) {
   const n = packs.length;
   for (let i = 0; i < n; i++) {
@@ -432,7 +410,7 @@ function startHidDrain() {
   void drainHidQueue();
 }
 
-/** Single async drain: one dev.write at a time, FIFO — chunks from different images cannot interleave. */
+/** Write queued packets to USB one by one (async loop). */
 async function drainHidQueue() {
   try {
     while (dev && hidWriteQueue.length > 0) {
@@ -483,7 +461,6 @@ function handleVisualLine(line) {
   const body = firstSpace === -1 ? '' : line.slice(firstSpace + 1);
   const cmdUp = cmd.toUpperCase();
 
-  /** companion-satellite client.ts handleCommand: server can send PING; reply with PONG ${body} */
   if (cmdUp === 'PING') {
     if (!sSock.destroyed && sSock.writable) {
       try {
@@ -562,15 +539,8 @@ function handleVisualLine(line) {
 }
 
 /**
- * COMPANION SOCKET — Satellite API over TCP
- *
- * Bitfocus Companion listens for Satellite clients on a TCP port (default 16622; set COMPANION_PORT and
- * COMPANION_HOST in `.env` to point at another machine or port). This function configures one long-lived
- * socket: low latency (setNoDelay), keepalive, and handlers for connect / incoming data / disconnect.
- *
- * After connect, we send periodic PING lines so Companion knows we are alive, and we parse inbound
- * lines for PING (reply PONG), BEGIN (then ADD-DEVICE handshake), BITMAP (button art), and brightness.
- * Outbound KEY-PRESS and KEY-ROTATE lines generated from hardware go through this same socket.
+ * TCP link to Companion (port 16622 by default; COMPANION_HOST / COMPANION_PORT in `.env`).
+ * Handles ping/pong, device registration, incoming BITMAP lines, brightness; sends key events from the deck.
  */
 function connectSockets() {
   sSock.setNoDelay(true);
@@ -619,16 +589,8 @@ function connectSockets() {
 }
 
 /**
- * HID CONNECTION — discover the deck on USB and send “wake” bytes
- *
- * `HID.devices()` asks the operating system for every HID device currently plugged in. We walk that list
- * and compare each entry’s Vendor ID (VID) and Product ID (PID) against `SUPPORTED_DEVICES` in devices.js.
- * VID identifies the manufacturer; PID identifies the exact product—together they are how Windows/Linux
- * tell one USB gadget from another.
- *
- * When a profile matches, we open that device’s `path` and send `initSequence`: short binary commands the
- * firmware expects to initialize the display controller (wake from idle, turn on backlights, set default
- * brightness). Without this step, later image writes may not appear on screen even though USB is connected.
+ * Find a supported device on USB (match vid/pid from devices.js), open it, and run its initSequence so
+ * screens and lighting are ready before we push images.
  */
 function startHid() {
   if (dev) return;
@@ -695,20 +657,9 @@ function startHid() {
     }, 1000);
 
     /**
-     * INPUT TRANSLATION — HID report → Companion KEY-PRESS / KEY-ROTATE
-     *
-     * Each time you touch the device, the firmware sends a binary HID report (a Buffer). We first check a
-     * short “ACK” signature so we only parse real input frames. Two bytes inside the report describe *what*
-     * happened; `parseHardwareEvent` in parser.js turns those into names like `button_2_3` or `encoder_1_left`.
-     *
-     * Next, `companionKeyFromHardwareEvent` uses devices.js (`INPUT_CORRECTION_MAP`) to convert that name into
-     * a Companion key index (0 … KEYS_TOTAL−1). From the index we build a grid coordinate string
-     * `row/col` (e.g. `1/2`) used as CONTROLID and KEY in the Satellite line—Companion uses that to match
-     * the physical control to the cell in your layout.
-     *
-     * Ordinary keys become KEY-PRESS with PRESSED=1/0. Knobs emit KEY-ROTATE with DIRECTION for left/right.
-     * Some controls only send a single “down” pulse; we optionally synthesize a quick release so Companion
-     * sees a full click (see `isStatelessButtonEvent`).
+     * USB input: ignore packets without the expected header, then parser.js → event name → Companion key
+     * via INPUT_CORRECTION_MAP. Short taps with no release get a synthetic release when isStatelessButtonEvent
+     * applies (touch, swipes, encoder push).
      */
     dev.on('data', (d) => {
       if (d[0] !== 0x41 || d[1] !== 0x43 || d[2] !== 0x4b) return;
@@ -717,7 +668,8 @@ function startHid() {
         try {
           const ev = parseHardwareEvent(
             d[9].toString(16).padStart(2, '0'),
-            d[10].toString(16).padStart(2, '0')
+            d[10].toString(16).padStart(2, '0'),
+            d
           );
           if (!ev) return;
           const companionKey = companionKeyFromHardwareEvent(ev);
@@ -819,15 +771,7 @@ function shutdownFromTray() {
   }
 }
 
-/**
- * SYSTEM TRAY — background operation on Windows
- *
- * The `systray2` module spawns a tiny helper that draws an icon in the Windows notification area (system tray).
- * That lets you run this bridge without keeping a console window in the foreground—useful when started from
- * a launcher script. The menu’s Quit item calls `shutdownFromTray`, which closes the HID handle, destroys
- * the Companion TCP socket so the port is freed, stops the tray helper, and exits the Node process—avoiding
- * orphaned USB or network resources when you leave for the day.
- */
+/** Windows: optional tray icon; Quit closes USB and TCP cleanly. */
 function initSystemTray() {
   try {
     const iconPath = path.join(__dirname, 'AKP05_icon.ico');
