@@ -1,5 +1,11 @@
 /**
- * Off-thread image pipeline — Companion raw RGB → JPEG (112×112). Uses devices.js for key→hardware mapping.
+ * image-worker.js — Background thread for preparing images so the main app stays responsive.
+ *
+ * AKP05 “giant canvas” touch strip:
+ *   The bottom strip is physically one long 800×112 screen. Companion still sends four separate button
+ *   images (one per soft key). This worker stitches those four square icons onto a single black 800×112
+ *   image—like placing four stickers on one strip—then encodes that whole strip as one JPEG for USB.
+ *   Other keys (main LCD) stay a single square image each.
  */
 'use strict';
 
@@ -7,16 +13,25 @@ const { parentPort } = require('worker_threads');
 const sharp = require('sharp');
 const { getHwScreenFromCompanionKey } = require('./devices');
 
+const NUM_TOUCH_KEYS = Math.min(7, Math.max(1, parseInt(process.env.AKP05_TOUCH_KEYS || '4', 10)));
+const touchState = new Array(NUM_TOUCH_KEYS).fill(null);
+const TOUCH_X = [];
+const ZONE_WIDTH = 800 / NUM_TOUCH_KEYS;
+for (let i = 0; i < NUM_TOUCH_KEYS; i++) {
+  TOUCH_X.push(Math.round(i * ZONE_WIDTH + (ZONE_WIDTH - 112) / 2));
+}
+TOUCH_X.reverse();
+
 sharp.cache(false);
 sharp.concurrency(1);
 
-/** Companion satellite sends raw RGB at 112×112 for this surface (112×112×3 = 37,632 bytes). */
+/** Typical BITMAP payload from Companion: raw RGB, one square per key. */
 const RAW = 112;
 const RAW_RGB_LEN = RAW * RAW * 3;
 
 const JPEG_QUALITY = Math.min(100, Math.max(40, parseInt(process.env.AKP05_JPEG_QUALITY || '75', 10) || 75));
 
-/** Baseline JPEG settings for embedded decoders (see Sharp JpegOptions). */
+/** JPEG settings for the device decoder (quality overridable with AKP05_JPEG_QUALITY). */
 const JPEG_OUTPUT = {
   quality: JPEG_QUALITY,
   progressive: false,
@@ -26,7 +41,6 @@ const JPEG_OUTPUT = {
   overshootDeringing: false,
 };
 
-/** Every key (including touch zones) is encoded as 112×112 for the device. */
 const OUT_SIZE = 112;
 
 parentPort.on('message', async (job) => {
@@ -47,8 +61,6 @@ parentPort.on('message', async (job) => {
 
     const imgBuffer = Buffer.from(job.base64, 'base64');
 
-    console.log(`[WORKER] Key ${keyIdx} -> HW ${hwIndex} | 112x112`);
-
     let pipeline;
     if (imgBuffer.length === RAW_RGB_LEN) {
       pipeline = sharp(imgBuffer, {
@@ -59,6 +71,50 @@ parentPort.on('message', async (job) => {
     } else {
       pipeline = sharp(imgBuffer);
     }
+
+    const isTouch = hwIndex >= 0 && hwIndex <= 3;
+
+    if (isTouch) {
+      // Strip path: prepare each icon, keep PNG buffers for layering, then one JPEG for the full bar.
+      const iconBuf = await pipeline
+        .resize(112, 112, { fit: 'fill', kernel: sharp.kernel.nearest })
+        .rotate(180)
+        .removeAlpha()
+        .png()
+        .toBuffer();
+
+      if (hwIndex < NUM_TOUCH_KEYS) {
+        touchState[hwIndex] = iconBuf;
+      }
+
+      const composites = [];
+      for (let i = 0; i < NUM_TOUCH_KEYS; i++) {
+        if (touchState[i]) {
+          composites.push({
+            input: touchState[i],
+            left: TOUCH_X[i],
+            top: 0,
+          });
+        }
+      }
+
+      const jpeg = await sharp({
+        create: {
+          width: 800,
+          height: 112,
+          channels: 3,
+          background: { r: 0, g: 0, b: 0 },
+        },
+      })
+        .composite(composites)
+        .jpeg({ quality: 75, progressive: false, chromaSubsampling: '4:2:0' })
+        .toBuffer();
+
+      parentPort.postMessage({ id: job.id, keyIdx: job.keyIdx, ok: true, jpeg });
+      return;
+    }
+
+    console.log(`[WORKER] Key ${keyIdx} -> HW ${hwIndex} | 112x112`);
 
     const jpeg = await pipeline
       .resize(OUT_SIZE, OUT_SIZE, { fit: 'fill', kernel: sharp.kernel.nearest })

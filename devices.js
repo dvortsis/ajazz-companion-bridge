@@ -1,33 +1,26 @@
 /**
- * DEVICE REGISTRY & KEY MAPS — Companion ↔ hardware crosswalk (devices.js)
+ * devices.js — Supported USB decks and how each control maps to Companion and to on-device drawing.
  *
- * This module lists which USB products we support and how logical controls map to Companion’s grid.
+ * If you rearrange buttons in Companion or rename controls, update INPUT_CORRECTION_MAP and VISUAL_MAP
+ * together so presses and pictures still line up.
  */
 'use strict';
 
+/** Row and column (0-based) on a 5-column Companion page → one flat key number (0, 1, 2 …). */
+const grid = (row, col) => row * 5 + col;
+
 /**
- * SUPPORTED_DEVICES — one entry per deck model we recognize
+ * Each entry is one product the bridge can open. The OS matches USB vendor/product IDs (vid/pid) to pick
+ * the right profile. usagePage narrows the HID interface when a device exposes more than one.
  *
- * USB basics (why VID/PID matter):
- *   Every USB gadget announces a 16-bit Vendor ID (VID) and 16-bit Product ID (PID). VID tells you *who*
- *   made the chip or device (assigned by the USB consortium); PID tells you *which model* it is within
- *   that vendor’s lineup. Windows and macOS expose these to libraries like node-hid; we compare them to the
- *   values below so the bridge opens the right device when several USB peripherals are plugged in at once.
+ * keysPerRow × rows = how many keys Companion thinks the deck has (used at connect). Init sequences are
+ * short wake-up commands so displays and backlight work before we send images.
  *
- * Optional `usagePage` helps when one physical device exposes more than one HID interface (e.g. keyboard
- * vs. vendor-specific control surface). We only open the interface whose usage page matches—avoiding the
- * wrong endpoint.
- *
- * `keysPerRow` and `rows` describe the Companion button grid for ADD-DEVICE (how many keys total and how
- * they wrap into rows/columns for CONTROLID strings). Scan order is the array order: the first matching
- * profile wins.
- *
- * initSequence — wake-up bytes for the LCD / brightness controller:
- *   Values are written in hexadecimal notation (0xFF = 255). Each inner array is one logical command
- *   (display enable “DIS”, lighting “LIG”, etc.) padded to a full HID output report by index.js. Different
- *   chip families expect different command shapes; that is why each product has its own sequence. Sending the
- *   correct sequence powers the screen pipeline so later image transfers show up; skipping it can leave the
- *   deck dark even though USB enumeration succeeded.
+ * Grid sizes:
+ *   Ajazz AKP05      — 5 × 4
+ *   Ajazz AKP05E Pro — 5 × 5
+ *   Ajazz AKP153 / E / R — 5 × 3
+ *   Mirabox N4 / N4E — 5 × 3
  */
 const SUPPORTED_DEVICES = [
   {
@@ -37,7 +30,7 @@ const SUPPORTED_DEVICES = [
     pid: 0x3004,
     usagePage: 65440,
     keysPerRow: 5,
-    rows: 5,
+    rows: 4,
     initSequence: [
       [0x00, 0x43, 0x52, 0x54, 0x00, 0x00, 0x44, 0x49, 0x53],
       [0x00, 0x43, 0x52, 0x54, 0x00, 0x00, 0x4c, 0x49, 0x47, 0x00, 0x00, 0x00, 0x00],
@@ -129,8 +122,7 @@ function getKeysTotal(device) {
 }
 
 /**
- * Per-event input semantics: 'button' (KEYDOWN/KEYUP) or 'encoder' (ROTATE).
- * Unlisted events fall back in index.js: button_* → button, else encoder.
+ * Tells index.js whether to send a normal button press or a knob rotation to Companion.
  */
 const INPUT_BEHAVIORS = {
   swipe_left: 'button',
@@ -139,6 +131,9 @@ const INPUT_BEHAVIORS = {
   touch_2: 'button',
   touch_3: 'button',
   touch_4: 'button',
+  touch_5: 'button',
+  touch_6: 'button',
+  touch_7: 'button',
   encoder_1_left: 'encoder',
   encoder_1_right: 'encoder',
   encoder_2_left: 'encoder',
@@ -154,7 +149,8 @@ const INPUT_BEHAVIORS = {
 };
 
 /**
- * Single source of truth: inputs that only send DOWN (or miss UP) and need a 50ms synthetic UP in bridge.
+ * Touch, swipes, and encoder “push” sometimes only send a press with no release; the bridge adds a short
+ * synthetic release so Companion sees a complete click.
  */
 function isStatelessButtonEvent(eventName) {
   return (
@@ -165,23 +161,28 @@ function isStatelessButtonEvent(eventName) {
 }
 
 /**
- * Hardware event string → mirajazz HW screen index for BAT (draw targets).
- * AKP05-oriented: other products may need per-device maps if screen indices differ.
+ * VISUAL_MAP — Where each named control’s picture is sent on the hardware.
+ *
+ * Main LCD keys use the device’s real screen slot numbers (here 5–14 for the two rows of five).
+ *
+ * Touch strip (AKP05): The bottom bar is one wide display. Companion still uses four separate keys for art;
+ * we give those keys their own “draw slot” numbers here so they never reuse the main LCD slots (5–14) or
+ * Companion’s top grid keys (0–9). A common pattern is Virtual IDs 100–103 for the four zones. This
+ * project may use 0–3 instead for the same idea—reserved numbers only used for the strip. index.js then
+ * sends the finished wide image using USB hardware slot 0 so it lands on the physical touch bar (see
+ * scheduleHidWrites / buildBatPreambleReport).
  */
 const VISUAL_MAP = {
-  // Physical Top Row -> Hardware Screen Indices 10-14
   button_1_1: 10,
   button_1_2: 11,
   button_1_3: 12,
   button_1_4: 13,
   button_1_5: 14,
-  // Physical Middle Row -> Hardware Screen Indices 5-9
   button_2_1: 5,
   button_2_2: 6,
   button_2_3: 7,
   button_2_4: 8,
   button_2_5: 9,
-  // Physical Touch Strip -> Hardware Screen Indices 0–3 (176×112)
   touch_1: 0,
   touch_2: 1,
   touch_3: 2,
@@ -189,50 +190,43 @@ const VISUAL_MAP = {
 };
 
 /**
- * Parser event name → Companion key index (0 … KEYS_TOTAL−1).
- * Tied to firmware byte pairs → event strings in parser.js; layouts differ by product.
- * New devices with different physical grids may need their own maps here, a registry of
- * maps keyed by activeDeviceConfig.id, or shared offset/key-order rules—do not assume
- * one global map fits all SUPPORTED_DEVICES entries.
+ * INPUT_CORRECTION_MAP — Event name from parser.js → Companion key index (top-left of grid = 0, 5 columns).
+ * Adjust grid(row, col) if you move actions in Companion’s layout.
  */
 const INPUT_CORRECTION_MAP = {
-  // Top Row triggers Companion Keys 0-4
-  button_1_1: 0,
-  button_1_2: 1,
-  button_1_3: 2,
-  button_1_4: 3,
-  button_1_5: 4,
-  // Middle Row triggers Companion Keys 5-9
-  button_2_1: 5,
-  button_2_2: 6,
-  button_2_3: 7,
-  button_2_4: 8,
-  button_2_5: 9,
-  // Touch Strip triggers Companion Keys 10-13 (row 3, no fifth column)
-  touch_1: 10,
-  touch_2: 11,
-  touch_3: 12,
-  touch_4: 13,
-  // Encoders trigger Companion Keys 15-18
-  encoder_1_push: 15,
-  encoder_1_left: 15,
-  encoder_1_right: 15,
-  encoder_2_push: 16,
-  encoder_2_left: 16,
-  encoder_2_right: 16,
-  encoder_3_push: 17,
-  encoder_3_left: 17,
-  encoder_3_right: 17,
-  encoder_4_push: 18,
-  encoder_4_left: 18,
-  encoder_4_right: 18,
-  swipe_left: 14,
-  swipe_right: 19,
+  button_1_1: grid(0, 0),
+  button_1_2: grid(0, 1),
+  button_1_3: grid(0, 2),
+  button_1_4: grid(0, 3),
+  button_1_5: grid(0, 4),
+  button_2_1: grid(1, 0),
+  button_2_2: grid(1, 1),
+  button_2_3: grid(1, 2),
+  button_2_4: grid(1, 3),
+  button_2_5: grid(1, 4),
+  touch_1: grid(2, 0),
+  touch_2: grid(2, 1),
+  touch_3: grid(2, 2),
+  touch_4: grid(2, 3),
+  encoder_1_push: grid(3, 0),
+  encoder_1_left: grid(3, 0),
+  encoder_1_right: grid(3, 0),
+  encoder_2_push: grid(3, 1),
+  encoder_2_left: grid(3, 1),
+  encoder_2_right: grid(3, 1),
+  encoder_3_push: grid(3, 2),
+  encoder_3_left: grid(3, 2),
+  encoder_3_right: grid(3, 2),
+  encoder_4_push: grid(3, 3),
+  encoder_4_left: grid(3, 3),
+  encoder_4_right: grid(3, 3),
+  swipe_left: grid(2, 4),
+  swipe_right: grid(3, 4),
 };
 
 /**
- * Companion key index → HW screen index for surfaces that exist in VISUAL_MAP.
- * Returns null if there is no drawable surface (e.g. key 14 blank, encoders 15-18).
+ * Looks up which draw slot (VISUAL_MAP) Companion is asking for when it sends a BITMAP for a key index.
+ * Returns null for keys that have no screen (e.g. encoder-only actions).
  */
 function getHwScreenFromCompanionKey(keyIdx) {
   const k = keyIdx | 0;
@@ -243,6 +237,7 @@ function getHwScreenFromCompanionKey(keyIdx) {
 }
 
 module.exports = {
+  grid,
   SUPPORTED_DEVICES,
   getKeysTotal,
   INPUT_BEHAVIORS,
