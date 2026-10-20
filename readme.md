@@ -132,11 +132,11 @@ Each product is one entry in `devices.js` (`SUPPORTED_DEVICES`): USB ids, grid s
 
 ## Other platforms
 
-The core (USB, image processing, Companion link) is cross-platform; set `BRIDGE_NO_TRAY=1` if the tray icon is unavailable. Auto-start (`install-startup`) is Windows only. CI also runs on Ubuntu, but only Windows with the AKP05 has been tried on real hardware. A single-file `.exe` is not offered because `sharp` and `node-hid` are native modules; `setup.cmd` is the one-step installer instead.
+The core (USB, image processing, Companion link) is cross-platform; set `BRIDGE_NO_TRAY=1` if the tray icon is unavailable. Auto-start (`install-startup`) is Windows only. The install and full test suite pass on Linux (Debian, Node 22) and CI runs on Ubuntu, but only Windows with the AKP05 has been tried on real hardware. A single-file `.exe` is not offered because `sharp` and `node-hid` are native modules; `setup.cmd` is the one-step installer instead.
 
 ## Other platforms
 
-The core (USB, image processing, Companion link) is cross-platform; set `BRIDGE_NO_TRAY=1` if the tray icon is unavailable. Auto-start (`install-startup`) is Windows only. CI also runs on Ubuntu, but only Windows with the AKP05 has been tried on real hardware. A single-file `.exe` is not offered because `sharp` and `node-hid` are native modules; `setup.cmd` is the one-step installer instead.
+The core (USB, image processing, Companion link) is cross-platform; set `BRIDGE_NO_TRAY=1` if the tray icon is unavailable. Auto-start (`install-startup`) is Windows only. The install and full test suite pass on Linux (Debian, Node 22) and CI runs on Ubuntu, but only Windows with the AKP05 has been tried on real hardware. A single-file `.exe` is not offered because `sharp` and `node-hid` are native modules; `setup.cmd` is the one-step installer instead.
 
 ## Development
 
