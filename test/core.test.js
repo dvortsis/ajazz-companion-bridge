@@ -207,3 +207,31 @@ test('login item: per-OS location and generated launchd / systemd / vbs content'
     'CreateObject("WScript.Shell").Run "wscript.exe ""C:\\x\\launch-bridge.vbs""", 0, False\r\n'
   );
 });
+
+const { bundleName, launchers, FILES } = require('../scripts/package');
+
+test('release bundles: naming, launchers and file list', () => {
+  assert.equal(bundleName('1.2.0', 'win32', 'x64'), 'ajazz-bridge-1.2.0-windows-x64');
+  assert.equal(bundleName('1.2.0', 'darwin', 'arm64'), 'ajazz-bridge-1.2.0-macos-arm64');
+  assert.equal(bundleName('1.2.0', 'linux', 'x64'), 'ajazz-bridge-1.2.0-linux-x64');
+
+  const win = launchers('win32');
+  assert.deepEqual(Object.keys(win).sort(), [
+    'install-startup.cmd',
+    'launch-bridge.vbs',
+    'start.cmd',
+    'uninstall-startup.cmd',
+  ]);
+  assert.match(win['launch-bridge.vbs'].content, /node\.exe/);
+  assert.match(win['launch-bridge.vbs'].content, /supervisor\.js/);
+  assert.match(win['start.cmd'].content, /node\.exe index\.js/);
+
+  const mac = launchers('darwin');
+  assert.ok(mac['Start Ajazz Bridge.command'].exec, 'double-clickable in Finder');
+  assert.match(mac['start.sh'].content, /^#!\/bin\/sh\n/);
+  assert.match(mac['start.sh'].content, /exec \.\/node index\.js/);
+  assert.ok(!('Start Ajazz Bridge.command' in launchers('linux')));
+
+  for (const f of FILES) assert.ok(fs.existsSync(path.join(__dirname, '..', f)), `${f} exists`);
+  for (const f of ['index.js', 'supervisor.js', 'image-worker.js', 'AKP05_icon.png']) assert.ok(FILES.includes(f), f);
+});
