@@ -89,6 +89,18 @@ Assign dial turns in Companion's **Rotary Actions** tab on the dial's button (e.
 
 **Touch strip layout:** the four strip icons are spread across the 800 px strip so the outer two sit flush with the left and right edges and the inner two are evenly spaced, lining each icon up with the dial beneath it. `AKP05_STRIP_EDGE_PADDING` pulls them inwards.
 
+```text
+ 800 px touch strip (as drawn, before the 180° panel rotation is accounted for by the bridge)
+
+ |<-112->|                                                   |<-112->|
+ +-------+     +-------+           +-------+     +-------+
+ | key   |     | key   |           | key   |     | key   |      Companion keys 2/0  2/1  2/2  2/3
+ | 2/0   |     | 2/1   |           | 2/2   |     | 2/3   |      (touch_1 ... touch_4)
+ +-------+     +-------+           +-------+     +-------+
+ x=0           x=229               x=459         x=688          icon left edges; outer icons flush to the edges
+    (o)           (o)                 (o)           (o)         dial 1       dial 2        dial 3       dial 4
+```
+
 ## Part 6: Running the Bridge
 
 ```text

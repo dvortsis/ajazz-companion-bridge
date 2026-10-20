@@ -62,6 +62,15 @@ function fit(pipeline, size, sourceIsRaw112) {
   return pipeline.resize(size, size, { fit: 'fill', kernel: sharp.kernel.lanczos3 });
 }
 
+/** Black strip canvas, created once per geometry and reused for every composite. */
+const baseCache = new Map();
+function blankStrip({ width, height }) {
+  const key = `${width}x${height}`;
+  let buf = baseCache.get(key);
+  if (!buf) baseCache.set(key, (buf = Buffer.alloc(width * height * 3)));
+  return sharp(buf, { raw: { width, height, channels: 3 } });
+}
+
 async function renderStrip(deviceId, strip) {
   const { geometry, padding, quality } = strip;
   const icons = stripState.get(deviceId) || [];
@@ -70,9 +79,7 @@ async function renderStrip(deviceId, strip) {
   for (let i = 0; i < geometry.zones; i++) {
     if (icons[i]) composites.push({ input: icons[i], left: xs[i], top: 0 });
   }
-  return sharp({
-    create: { width: geometry.width, height: geometry.height, channels: 3, background: { r: 0, g: 0, b: 0 } },
-  })
+  return blankStrip(geometry)
     .composite(composites)
     .jpeg({ quality, progressive: false, chromaSubsampling: '4:2:0' })
     .toBuffer();
