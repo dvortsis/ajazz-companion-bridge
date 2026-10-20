@@ -1,8 +1,7 @@
 # docker compose up -d   (build locally: docker compose build)
 services:
   ajazz-bridge:
-    build: .
-    image: ajazz-companion-bridge:latest
+    image: ghcr.io/dvortsis/ajazz-companion-bridge:latest # or build locally: replace with `build: .`
     container_name: ajazz-bridge
     restart: unless-stopped
     network_mode: host # reach Companion on localhost; or set COMPANION_HOST to its address

@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Changed
+
+- Docker and Unraid instructions now use the published `ghcr.io/dvortsis/ajazz-companion-bridge` image (public, amd64 and arm64) instead of building locally.
+
 ## [1.3.0] - 2026-10-20
 
 ### Added

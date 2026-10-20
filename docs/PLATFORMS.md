@@ -58,11 +58,12 @@ Docker packages the bridge so you don't install Node yourself. It suits servers 
 The image is headless and configured with environment variables; logs and the lock go to `/config`.
 
 ```text
-docker build -t ajazz-companion-bridge .
 docker run -d --name ajazz-bridge --restart unless-stopped --network host \
   -e COMPANION_HOST=127.0.0.1 -e COMPANION_PORT=16622 -v $PWD/config:/config \
-  --device=/dev/hidraw0 ajazz-companion-bridge
+  --device=/dev/hidraw0 ghcr.io/dvortsis/ajazz-companion-bridge:latest
 ```
+
+The image is published for amd64 and arm64 and needs no login to pull. To build it yourself instead, run `docker build -t ajazz-companion-bridge .` in this folder and use that name in place of the `ghcr.io/...` one.
 
 or `docker compose up -d` with the included `docker-compose.yml`. The deck appears as `/dev/hidrawN` (`ls -l /dev/hidraw*`); pass that device with `--device`, or use `--privileged` if the number changes between boots. Install the udev rules on the Docker host too. `docker logs ajazz-bridge` should show `[HID] Secured …` and `ADD-DEVICE OK`. Tagging a release (`v*`) on GitHub publishes `ghcr.io/<owner>/ajazz-companion-bridge` for amd64 and arm64 with `.github/workflows/docker.yml`.
 
@@ -70,8 +71,8 @@ or `docker compose up -d` with the included `docker-compose.yml`. The deck appea
 
 The pad must be plugged into the Unraid server for this route. If it is plugged into your PC, run the bridge on the PC instead (step 5).
 
-1. Build the image on the server (`docker build -t ajazz-companion-bridge /path/to/ajazz-bridge`), or use the `ghcr.io` image once published.
-2. Copy `deploy/unraid/ajazz-bridge.xml` to `/boot/config/plugins/dockerMan/templates-user/`, then **Docker → Add Container → ajazz-companion-bridge**. Set **Repository** to your image if you built it locally.
+1. Nothing to build: the template pulls the published image `ghcr.io/dvortsis/ajazz-companion-bridge:latest`. (To use a copy you built yourself, run `docker build -t ajazz-companion-bridge /path/to/ajazz-bridge` and set **Repository** to that name.)
+2. Copy `deploy/unraid/ajazz-bridge.xml` to `/boot/config/plugins/dockerMan/templates-user/`, then **Docker → Add Container → ajazz-companion-bridge**. Set **Repository** only if you built your own image.
 3. Set **Companion host** to the Unraid IP if Companion is another container, or to the IP of the machine that runs Companion.
 4. The template runs with `--privileged` so the container can open the USB HID device. To avoid that, turn Privileged off and add `--device=/dev/hidrawN` under Extra Parameters.
 5. If the deck is plugged into another PC rather than Unraid, run the bridge on that PC and point it at Companion on Unraid.
