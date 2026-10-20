@@ -12,7 +12,7 @@ const { EventEmitter } = require('events');
 const log = require('./log');
 const { createProtocol } = require('./protocol');
 const { parseHardwareEvent } = require('./parser');
-const { isStatelessButtonEvent, getDrawSlot, companionKeyForEvent, behaviorFor } = require('./devices');
+const { grid, isStatelessButtonEvent, getDrawSlot, companionKeyForEvent, behaviorFor } = require('./devices');
 
 /** Consecutive failed USB writes before the device is considered gone. */
 const MAX_WRITE_FAILURES = 3;
@@ -64,6 +64,7 @@ class DeckSession extends EventEmitter {
     this.idleTimer = null;
     this.autoUpTimers = new Set();
     this.encoderState = new Map();
+    this.dialsHeld = new Map();
     this.warnedUnmapped = new Set();
   }
 
@@ -188,7 +189,7 @@ class DeckSession extends EventEmitter {
   }
 
   effectiveBrightness() {
-    return this.asleep ? 0 : this.brightness;
+    return this.asleep ? this.config.idleDimPercent || 0 : this.brightness;
   }
 
   keepalive() {
@@ -208,8 +209,11 @@ class DeckSession extends EventEmitter {
   idleCheck() {
     if (this.asleep || Date.now() - this.lastInput < this.config.idleOffMinutes * 60000) return;
     this.asleep = true;
-    log.info(`[IDLE] ${this.deviceId}: displays off`);
-    this.enqueue([this.protocol.buildBrightnessReport(0)], null);
+    log.info(
+      `[IDLE] ${this.deviceId}: displays ` +
+        (this.effectiveBrightness() > 0 ? `dimmed to ${this.effectiveBrightness()}%` : 'off')
+    );
+    this.enqueue([this.protocol.buildBrightnessReport(this.effectiveBrightness())], null);
   }
 
   wake() {
@@ -326,10 +330,26 @@ class DeckSession extends EventEmitter {
       return;
     }
 
+    const dial = /^encoder_(\d+)_(left|right|push)$/.exec(eventName);
+
     if (behaviorFor(eventName) === 'encoder') {
       const right = eventName.includes('_right');
       const count = this.encoderRepeat(eventName, right);
-      for (let i = 0; i < count; i++) this.satellite.sendRotate(this.deviceId, key, right);
+      let rotateKey = key;
+      const held = this.config.shiftRotate && this.dialsHeld.get(dial[1]);
+      if (held) {
+        // Press-and-rotate: turns while the dial is held go to the extra "shift" row (row 4, one key per dial).
+        held.rotated = true;
+        rotateKey = grid(4, Number(dial[1]) - 1);
+      }
+      for (let i = 0; i < count; i++) this.satellite.sendRotate(this.deviceId, rotateKey, right);
+      return;
+    }
+
+    if (dial && dial[2] === 'push' && this.config.shiftRotate) return this.handleShiftPush(dial[1], key, ev.pressed);
+    if (dial && dial[2] === 'push' && this.config.dialPushHold) {
+      // Real press/release (long-press works in Companion) instead of a synthetic click.
+      this.satellite.sendKey(this.deviceId, key, ev.pressed);
       return;
     }
 
@@ -346,6 +366,31 @@ class DeckSession extends EventEmitter {
     }
 
     this.satellite.sendKey(this.deviceId, key, ev.pressed);
+  }
+
+  /**
+   * Press-and-rotate mode: the push is held back until release so a push used as a shift for turning does not
+   * also click. A plain push (no turn) clicks on release. A dial that never reports a release is freed after 5 s.
+   */
+  handleShiftPush(dialNo, key, pressed) {
+    const held = this.dialsHeld.get(dialNo);
+    if (pressed) {
+      if (held) clearTimeout(held.timer);
+      const entry = { rotated: false, timer: null };
+      entry.timer = setTimeout(() => this.dialsHeld.delete(dialNo), 5000);
+      this.dialsHeld.set(dialNo, entry);
+      return;
+    }
+    if (!held) return;
+    clearTimeout(held.timer);
+    this.dialsHeld.delete(dialNo);
+    if (held.rotated) return;
+    this.satellite.sendKey(this.deviceId, key, true);
+    const t = setTimeout(() => {
+      this.autoUpTimers.delete(t);
+      this.satellite.sendKey(this.deviceId, key, false);
+    }, this.config.autoUpMs);
+    this.autoUpTimers.add(t);
   }
 
   /** 1, or encoderAccel when the dial is being spun quickly in one direction. */

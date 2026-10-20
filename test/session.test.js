@@ -193,3 +193,46 @@ test('open failure reports false and leaves nothing registered', () => {
   assert.equal(session.start(), false);
   assert.equal(satellite.handlers, null);
 });
+
+test('shift-rotate: turning while a dial is held goes to row 4; a plain push clicks on release', async () => {
+  const { hid, satellite, session } = make({ shiftRotate: true });
+  hid.emit('data', report(0x35, 1)); // dial 2 down: nothing sent yet
+  hid.emit('data', report(0x51)); // turn right while held
+  await waitFor(() => satellite.sent.length === 1);
+  assert.deepEqual(satellite.sent[0], ['rot', 21, true]);
+  hid.emit('data', report(0x35, 0)); // release after a turn: no click
+  hid.emit('data', report(0x51)); // plain turn → normal dial key (3/1 = 16)
+  await waitFor(() => satellite.sent.length === 2);
+  assert.deepEqual(satellite.sent[1], ['rot', 16, true]);
+  hid.emit('data', report(0x37, 1));
+  hid.emit('data', report(0x37, 0)); // plain push → click on release
+  await waitFor(() => satellite.sent.length === 4);
+  assert.deepEqual(satellite.sent.slice(2), [
+    ['key', 15, true],
+    ['key', 15, false],
+  ]);
+  session.close();
+});
+
+test('dial push hold: real press and release are forwarded', async () => {
+  const { hid, satellite, session } = make({ dialPushHold: true });
+  hid.emit('data', report(0x36, 1));
+  await waitFor(() => satellite.sent.length === 1);
+  await tick(60);
+  assert.equal(satellite.sent.length, 1, 'no synthetic release while held');
+  hid.emit('data', report(0x36, 0));
+  await waitFor(() => satellite.sent.length === 2);
+  assert.deepEqual(satellite.sent, [
+    ['key', 18, true],
+    ['key', 18, false],
+  ]);
+  session.close();
+});
+
+test('idle dim level is used instead of off', async () => {
+  const { hid, session } = make({ idleOffMinutes: 1, idleDimPercent: 15 });
+  session.lastInput = Date.now() - 2 * 60000;
+  session.idleCheck();
+  await waitFor(() => hid.writes.some((b) => b[6] === 0x4c && b[11] === 15));
+  session.close();
+});

@@ -82,6 +82,10 @@ class DeviceManager extends EventEmitter {
 
   open(key, hidInfo, profile) {
     const deviceId = this.assignDeviceId(profile, hidInfo);
+    // Press-and-rotate needs one extra Companion row (row 4) for the shifted dial turns.
+    if (this.config.shiftRotate && profile.layout.inputMap.encoder_1_push !== undefined) {
+      profile = { ...profile, rows: profile.rows + 1 };
+    }
     const session = new DeckSession({
       hidInfo,
       profile,

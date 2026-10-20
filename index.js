@@ -85,10 +85,11 @@ function main() {
 
   if (!config.noTray) {
     const { createTray } = require('./tray');
-    const open = (target, exe = 'explorer.exe') => spawn(exe, [target], { detached: true, stdio: 'ignore' }).unref();
+    const opener = process.platform === 'win32' ? 'explorer.exe' : process.platform === 'darwin' ? 'open' : 'xdg-open';
+    const open = (target, exe = opener) => spawn(exe, [target], { detached: true, stdio: 'ignore' }).unref();
     tray = createTray({
       startupEnabled: startup.isEnabled(),
-      openLog: () => open(log.file, 'notepad.exe'),
+      openLog: () => open(log.file, process.platform === 'win32' ? 'notepad.exe' : opener),
       openFolder: () => open(__dirname),
       reconnect: () => {
         satellite.reconnect();

@@ -28,6 +28,7 @@
 - Experimental profiles for further devices from the reference projects (marked `tested: false`).
 - Tray status, Open log/folder, Reconnect, Start with Windows; single-instance lock; supervisor with auto-restart.
 - `npm run probe`, `install-startup`, tests, ESLint/Prettier, CI.
+- Opt-in press-and-rotate (`BRIDGE_SHIFT_ROTATE`) and dial long-press (`BRIDGE_DIAL_PUSH_HOLD`), idle dim level, `setup.cmd` installer, Ubuntu CI.
 - Optional idle screen-off, encoder acceleration, swipe swap, configurable auto-release.
 - MIT `LICENSE`, `.env.example` documenting every setting.
 

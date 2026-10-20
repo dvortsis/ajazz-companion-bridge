@@ -76,6 +76,12 @@ const config = {
   /** Multiply rapid same-direction encoder ticks (0/1 = off). */
   encoderAccel: num('BRIDGE_ENCODER_ACCEL', 1, { min: 1, max: 10, int: true }),
   encoderAccelWindowMs: num('BRIDGE_ENCODER_ACCEL_WINDOW_MS', 80, { min: 10, int: true }),
+  /** Brightness (0-100) used when idle; 0 = off. */
+  idleDimPercent: num('BRIDGE_IDLE_DIM_PERCENT', 0, { min: 0, max: 100, int: true }),
+  /** Holding a dial push and turning sends the turn to an extra Companion row (row 4). */
+  shiftRotate: flag('BRIDGE_SHIFT_ROTATE'),
+  /** Dial pushes send real press/release (long-press) instead of a synthetic click. */
+  dialPushHold: flag('BRIDGE_DIAL_PUSH_HOLD'),
   /** Blank the displays after this many minutes without input (0 = never). */
   idleOffMinutes: num('BRIDGE_IDLE_OFF_MINUTES', 0, { min: 0 }),
 
@@ -114,6 +120,9 @@ const KNOWN = new Set([
   'BRIDGE_ENCODER_ACCEL',
   'BRIDGE_ENCODER_ACCEL_WINDOW_MS',
   'BRIDGE_IDLE_OFF_MINUTES',
+  'BRIDGE_IDLE_DIM_PERCENT',
+  'BRIDGE_SHIFT_ROTATE',
+  'BRIDGE_DIAL_PUSH_HOLD',
   'BRIDGE_NO_TRAY',
   'LOG_LEVEL',
   'LOG_DIR',

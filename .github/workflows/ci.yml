@@ -2,11 +2,17 @@ name: CI
 on: [push, pull_request]
 jobs:
   test:
-    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
+      - if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libudev-dev libusb-1.0-0-dev
       - run: npm ci
       - run: npm run lint
       - run: npm run format:check
