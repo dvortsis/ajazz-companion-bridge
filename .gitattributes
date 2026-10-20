@@ -1,5 +1,8 @@
-Dockerfile text eol=lf
-*.rules text eol=lf
-*.sh text eol=lf
-docker-compose.yml text eol=lf
-*.xml text eol=lf
+# Normalise text files to LF in the repository and on checkout, on every OS. Prettier and the Linux deployment
+# files expect LF; the Windows batch/VBS launchers need CRLF.
+* text=auto eol=lf
+*.cmd text eol=crlf
+*.bat text eol=crlf
+*.vbs text eol=crlf
+*.png binary
+*.ico binary
