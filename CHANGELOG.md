@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+
+- Touch strip icons now sit 8 px in from the strip edges by default (`AKP05_STRIP_EDGE_PADDING=8`) so the outer icons line up with the outer dials; set it to 0 for the previous flush-to-edge layout.
+
 ## [1.2.0] - 2026-10-20
 
 ### Added
@@ -58,6 +64,7 @@ Run on an Ajazz AKP05E with Companion 4.x on Windows: registration, all key and 
 
 - Initial release: Ajazz AKP05 bridge for Bitfocus Companion with touch strip compositing, rotary dials, swipes, system-tray icon and Windows auto-start.
 
+[Unreleased]: https://github.com/dvortsis/ajazz-companion-bridge/compare/v1.2.0...HEAD
 [1.2.0]: https://github.com/dvortsis/ajazz-companion-bridge/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/dvortsis/ajazz-companion-bridge/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/dvortsis/ajazz-companion-bridge/releases/tag/v1.0.0

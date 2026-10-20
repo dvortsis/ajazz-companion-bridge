@@ -77,7 +77,7 @@ const config = {
     int: true,
   }),
   /** Extra black margin (px) kept between the strip edge and the outer icons. 0 = flush with the edge. */
-  stripEdgePadding: num('AKP05_STRIP_EDGE_PADDING', 0, { min: 0, max: 200, int: true }),
+  stripEdgePadding: num('AKP05_STRIP_EDGE_PADDING', 8, { min: 0, max: 200, int: true }),
   /** Collect strip bitmaps arriving within this window into one JPEG upload. */
   stripBatchMs: num('AKP05_STRIP_BATCH_MS', 20, { min: 0, max: 500 }),
 

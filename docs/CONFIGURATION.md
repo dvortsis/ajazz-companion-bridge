@@ -16,18 +16,18 @@ Settings come from `.env` in the bridge folder (copy `.env.example`) or from rea
 
 ## Drawing
 
-| Setting                    | Default     | Purpose                                                                               |
-| :------------------------- | :---------- | :------------------------------------------------------------------------------------ |
-| `HID_WRITE_DELAY_MS`       | `0`         | Pause between USB image packets. Try `1`, `2`, `5` if buttons look torn.              |
-| `AKP05_IMAGE_SIZE`         | `112`       | Bitmap size requested from Companion (`72` or `112`). 72 px images are upscaled.      |
-| `AKP05_JPEG_QUALITY`       | `75`        | JPEG quality (40-100) for keys.                                                       |
-| `AKP05_STRIP_JPEG_QUALITY` | key quality | JPEG quality for the touch strip.                                                     |
-| `AKP05_STRIP_EDGE_PADDING` | `0`         | Pixels of black between the strip edge and the outer icons (0 = flush with the edge). |
-| `AKP05_STRIP_BATCH_MS`     | `20`        | Strip icons arriving within this window are composited into one upload.               |
-| `BRIDGE_KEY_BRIGHTNESS`    | none        | Per-key software dimming, e.g. `0:60,5:80` (Companion key index : percent).           |
-| `BRIDGE_IDLE_OFF_MINUTES`  | `0`         | Dim or blank the displays after this many idle minutes; any input wakes them.         |
-| `BRIDGE_IDLE_DIM_PERCENT`  | `0`         | Brightness while idle (`0` = off).                                                    |
-| `BRIDGE_KEEPALIVE_MS`      | `1000`      | USB brightness keepalive interval.                                                    |
+| Setting                    | Default     | Purpose                                                                                                                    |
+| :------------------------- | :---------- | :------------------------------------------------------------------------------------------------------------------------- |
+| `HID_WRITE_DELAY_MS`       | `0`         | Pause between USB image packets. Try `1`, `2`, `5` if buttons look torn.                                                   |
+| `AKP05_IMAGE_SIZE`         | `112`       | Bitmap size requested from Companion (`72` or `112`). 72 px images are upscaled.                                           |
+| `AKP05_JPEG_QUALITY`       | `75`        | JPEG quality (40-100) for keys.                                                                                            |
+| `AKP05_STRIP_JPEG_QUALITY` | key quality | JPEG quality for the touch strip.                                                                                          |
+| `AKP05_STRIP_EDGE_PADDING` | `8`         | Pixels of black between the strip edge and the outer icons (8 lines the icons up over the dials, 0 = flush with the edge). |
+| `AKP05_STRIP_BATCH_MS`     | `20`        | Strip icons arriving within this window are composited into one upload.                                                    |
+| `BRIDGE_KEY_BRIGHTNESS`    | none        | Per-key software dimming, e.g. `0:60,5:80` (Companion key index : percent).                                                |
+| `BRIDGE_IDLE_OFF_MINUTES`  | `0`         | Dim or blank the displays after this many idle minutes; any input wakes them.                                              |
+| `BRIDGE_IDLE_DIM_PERCENT`  | `0`         | Brightness while idle (`0` = off).                                                                                         |
+| `BRIDGE_KEEPALIVE_MS`      | `1000`      | USB brightness keepalive interval.                                                                                         |
 
 ## Input
 

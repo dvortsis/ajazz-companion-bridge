@@ -43,7 +43,7 @@ Companion sees the deck as a **5 × 4** grid (20 keys):
 | Rotary dials 1-4 (left to right) | 3             | `3/0` … `3/3` _(push, rotate L/R)_ |
 | Swipe right                      | 3             | `3/4` _(press)_                    |
 
-Assign dial turns in Companion's **Rotary Actions** tab on the dial's button (for example `3/0`). The four strip icons are spread across the 800 px strip, outer two flush to the edges, so each icon sits over its dial:
+Assign dial turns in Companion's **Rotary Actions** tab on the dial's button (for example `3/0`). The four strip icons are spread across the 800 px strip, the outer two 8 px in from the edges, so each icon sits over its dial (`AKP05_STRIP_EDGE_PADDING` adjusts this):
 
 ```text
  |<-112->|                                                   |<-112->|
@@ -51,7 +51,7 @@ Assign dial turns in Companion's **Rotary Actions** tab on the dial's button (fo
  | key   |     | key   |           | key   |     | key   |      Companion keys 2/0  2/1  2/2  2/3
  | 2/0   |     | 2/1   |           | 2/2   |     | 2/3   |      (touch_1 ... touch_4)
  +-------+     +-------+           +-------+     +-------+
- x=0           x=229               x=459         x=688          icon left edges on the 800 px strip
+ x=8           x=232               x=456         x=680          icon left edges on the 800 px strip
     (o)           (o)                 (o)           (o)         dial 1       dial 2        dial 3       dial 4
 ```
 

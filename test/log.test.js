@@ -35,6 +35,7 @@ test('debug lines are dropped at info level', () => {
 
 test('config falls back on invalid values and reports ignored settings', () => {
   assert.equal(config.port, 16622);
+  assert.equal(config.stripEdgePadding, 8, 'strip icons sit 8 px in from the edges by default');
   assert.equal(config.hidWriteDelayMs, 3);
   assert.ok(config.warnings.some((w) => w.includes('COMPANION_PORT')));
   assert.ok(config.warnings.some((w) => w.includes('AKP05_TOUCH_KEYS')));
