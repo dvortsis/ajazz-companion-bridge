@@ -50,6 +50,16 @@ The strip icons are placed 8 px in from the edges by default. To move them furth
 - **Linux:** install the USB permission rules, then unplug and replug the pad. Steps are in [PLATFORMS.md](PLATFORMS.md#linux-desktop-or-server).
 - **Mac:** macOS may ask to let your terminal app monitor input devices. Allow it under _System Settings_ → _Privacy & Security_ → _Input Monitoring_.
 
+## Unraid / Docker: "No supported devices found"
+
+The container can only see the USB device you pass in. The pad creates **two** `/dev/hidrawN` entries and only the first (`HID_PHYS` ending in `/input0`) is the one the bridge needs. Find it on the Unraid terminal:
+
+```text
+for d in /sys/class/hidraw/hidraw*; do grep -q 00000300:00003004 $d/device/uevent && echo "$(basename $d) $(grep HID_PHYS $d/device/uevent)"; done
+```
+
+Set **USB HID device** in the container settings to that node, and re-check it after a reboot or replug because the number can change. As a last resort, switch **Privileged** on.
+
 ## How to ask for help
 
 Open an issue on the project's GitHub page and include:
