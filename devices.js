@@ -208,9 +208,14 @@ function getKeysTotal(device) {
   return device.keysPerRow * device.rows;
 }
 
-/** Whether a HID enumeration entry matches a profile. */
-function matchesProfile(hid, p) {
-  return hid.vendorId === p.vid && hid.productId === p.pid && (p.usagePage == null || hid.usagePage === p.usagePage);
+/**
+ * Whether a HID enumeration entry matches a profile. On Windows the usage page must match exactly. Linux
+ * (hidraw/libusb) and macOS do not always report one (0 or undefined), so there it is accepted as unknown.
+ */
+function matchesProfile(hid, p, platform = process.platform) {
+  if (hid.vendorId !== p.vid || hid.productId !== p.pid) return false;
+  if (p.usagePage == null || hid.usagePage === p.usagePage) return true;
+  return platform !== 'win32' && !hid.usagePage;
 }
 
 /** Companion key → virtual draw slot for a layout, or null if the key has no screen. */

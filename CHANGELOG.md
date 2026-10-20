@@ -2,6 +2,13 @@
 
 ## 1.1.0
 
+### Ported to macOS, Linux and Unraid
+
+- Start at login on every OS: Windows Startup launcher, macOS launchd agent, Linux systemd user service (`npm run install-startup`).
+- Linux: generated udev rules (`npm run udev`, committed in `deploy/linux`); USB matching tolerates platforms that report no HID usage page.
+- Tray: PNG icon for macOS/Linux, off by default on headless Linux; single-instance lock no longer fatal on read-only installs.
+- Docker image, compose file, Unraid Community Apps template and a GHCR publish workflow (`deploy/`, `Dockerfile`).
+
 ### Verified on real hardware (Ajazz AKP05E + Companion 4.x, 2026-10-20)
 
 - Registration (ADD-DEVICE OK), all 14 key and strip images drawn, strip icons aligned over the dials.

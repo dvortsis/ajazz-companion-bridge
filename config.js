@@ -53,6 +53,12 @@ function parseKeyDim() {
   return map;
 }
 
+/** Linux without a display server (server, SSH session, Docker/Unraid) cannot show a tray icon. */
+function isHeadless() {
+  if (process.platform !== 'linux') return false;
+  return !process.env.DISPLAY && !process.env.WAYLAND_DISPLAY;
+}
+
 const config = {
   host: str('COMPANION_HOST', '127.0.0.1'),
   port: num('COMPANION_PORT', 16622, { min: 1, max: 65535, int: true }),
@@ -110,7 +116,11 @@ const config = {
 
   handshakeCrlf: flag('SATELLITE_HANDSHAKE_CRLF'),
   debugHex: flag('SATELLITE_DEBUG_HEX'),
-  noTray: flag('BRIDGE_NO_TRAY'),
+  /** Tray icon off: explicit BRIDGE_NO_TRAY, or by default on a headless Linux box / container. */
+  noTray:
+    process.env.BRIDGE_NO_TRAY !== undefined && process.env.BRIDGE_NO_TRAY !== ''
+      ? flag('BRIDGE_NO_TRAY')
+      : isHeadless(),
 };
 
 if (!['error', 'warn', 'info', 'debug'].includes(config.logLevel)) {

@@ -1,0 +1,15 @@
+node_modules
+dist
+test
+scripts
+deploy
+.git
+.github
+*.log
+*.log.*
+.env
+bridge.lock
+screenshot.png
+*.lnk
+*.vbs
+*.cmd

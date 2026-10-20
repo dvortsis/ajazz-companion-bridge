@@ -53,3 +53,25 @@ test('BRIDGE_KEY_BRIGHTNESS parses valid entries and reports bad ones', () => {
   );
   assert.equal(cfg.warnings.filter((w) => w.includes('BRIDGE_KEY_BRIGHTNESS')).length, 2);
 });
+
+test('tray defaults off on headless Linux, stays on elsewhere, and BRIDGE_NO_TRAY overrides', () => {
+  const real = Object.getOwnPropertyDescriptor(process, 'platform');
+  const load = (platform, env) => {
+    Object.defineProperty(process, 'platform', { value: platform });
+    for (const k of ['DISPLAY', 'WAYLAND_DISPLAY', 'BRIDGE_NO_TRAY']) delete process.env[k];
+    Object.assign(process.env, env);
+    delete require.cache[require.resolve('../config')];
+    return require('../config').noTray;
+  };
+  try {
+    assert.equal(load('linux', {}), true, 'no display server');
+    assert.equal(load('linux', { DISPLAY: ':0' }), false);
+    assert.equal(load('linux', { WAYLAND_DISPLAY: 'wayland-0' }), false);
+    assert.equal(load('linux', { BRIDGE_NO_TRAY: '0' }), false, 'explicit 0 wins');
+    assert.equal(load('win32', {}), false);
+    assert.equal(load('darwin', {}), false);
+    assert.equal(load('win32', { BRIDGE_NO_TRAY: '1' }), true);
+  } finally {
+    Object.defineProperty(process, 'platform', real);
+  }
+});

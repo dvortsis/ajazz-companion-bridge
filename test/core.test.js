@@ -144,3 +144,66 @@ test('single-instance lock', () => {
   lock.release(f);
   assert.equal(fs.existsSync(f), false);
 });
+
+const { udevRules } = require('../scripts/udev-rules');
+const startupMod = require('../startup');
+
+test('matchesProfile: strict usage page on Windows, tolerant when Linux/macOS report none', () => {
+  const p = devices.SUPPORTED_DEVICES[0];
+  const base = { vendorId: 0x0300, productId: 0x3004 };
+  assert.equal(devices.matchesProfile({ ...base, usagePage: 65440 }, p, 'win32'), true);
+  assert.equal(devices.matchesProfile({ ...base, usagePage: 0 }, p, 'win32'), false);
+  assert.equal(devices.matchesProfile({ ...base, usagePage: 0 }, p, 'linux'), true);
+  assert.equal(devices.matchesProfile(base, p, 'darwin'), true);
+  assert.equal(
+    devices.matchesProfile({ ...base, usagePage: 1 }, p, 'linux'),
+    false,
+    'a different usage page never matches'
+  );
+  assert.equal(devices.matchesProfile({ vendorId: 1, productId: 2, usagePage: 0 }, p, 'linux'), false);
+});
+
+test('udev rules cover every supported device and the committed file is current', () => {
+  const rules = udevRules();
+  for (const d of devices.SUPPORTED_DEVICES) {
+    const v = d.vid.toString(16).padStart(4, '0');
+    const pid = d.pid.toString(16).padStart(4, '0');
+    assert.ok(rules.includes(`SUBSYSTEM=="hidraw", ATTRS{idVendor}=="${v}", ATTRS{idProduct}=="${pid}"`), d.id);
+  }
+  assert.equal(
+    fs
+      .readFileSync(path.join(__dirname, '..', 'deploy', 'linux', '99-ajazz-bridge.rules'), 'utf8')
+      .replace(/\r\n/g, '\n'),
+    rules
+  );
+});
+
+test('login item: per-OS location and generated launchd / systemd / vbs content', () => {
+  const home = '/home/u';
+  assert.equal(
+    startupMod.startupFile('linux', {}, home).replace(/\\/g, '/'),
+    '/home/u/.config/systemd/user/ajazz-bridge.service'
+  );
+  assert.equal(
+    startupMod.startupFile('linux', { XDG_CONFIG_HOME: '/x' }, home).replace(/\\/g, '/'),
+    '/x/systemd/user/ajazz-bridge.service'
+  );
+  assert.equal(
+    startupMod.startupFile('darwin', {}, '/Users/u').replace(/\\/g, '/'),
+    '/Users/u/Library/LaunchAgents/com.ajazz.bridge.plist'
+  );
+  assert.match(startupMod.startupFile('win32', { APPDATA: 'C:\\A' }, home), /Startup.AjazzBridge\.vbs$/);
+  assert.equal(startupMod.startupFile('freebsd', {}, home), null);
+
+  const plist = startupMod.plistContent({ nodePath: '/usr/local/bin/node', appDir: '/Users/u/a & b', logDir: '/tmp' });
+  assert.match(plist, /<string>com\.ajazz\.bridge<\/string>/);
+  assert.match(plist, /<string>\/Users\/u\/a &amp; b<\/string>/);
+  assert.match(plist, /<key>RunAtLoad<\/key><true\/>/);
+  const unit = startupMod.unitContent({ nodePath: '/usr/bin/node', appDir: '/opt/ajazz' });
+  assert.match(unit, /ExecStart=\/usr\/bin\/node .*supervisor\.js/);
+  assert.match(unit, /WantedBy=default\.target/);
+  assert.equal(
+    startupMod.vbsContent('C:\\x\\launch-bridge.vbs'),
+    'CreateObject("WScript.Shell").Run "wscript.exe ""C:\\x\\launch-bridge.vbs""", 0, False\r\n'
+  );
+});

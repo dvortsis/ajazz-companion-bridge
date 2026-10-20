@@ -1,0 +1,19 @@
+# docker compose up -d   (build locally: docker compose build)
+services:
+  ajazz-bridge:
+    build: .
+    image: ajazz-companion-bridge:latest
+    container_name: ajazz-bridge
+    restart: unless-stopped
+    network_mode: host # reach Companion on localhost; or set COMPANION_HOST to its address
+    environment:
+      COMPANION_HOST: 127.0.0.1
+      COMPANION_PORT: '16622'
+      LOG_LEVEL: info
+      # HID_WRITE_DELAY_MS: "0"
+    volumes:
+      - ./config:/config
+    # The deck is a USB HID device. Pass it through (adjust hidrawN, see `ls /dev/hidraw*`), or use privileged.
+    devices:
+      - /dev/hidraw0:/dev/hidraw0
+    # privileged: true             # simplest if device numbers change between boots

@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>ajazz-companion-bridge</Name>
+  <Repository>ghcr.io/dvortsis/ajazz-companion-bridge:latest</Repository>
+  <Registry>https://github.com/dvortsis/ajazz-companion-bridge/pkgs/container/ajazz-companion-bridge</Registry>
+  <Network>host</Network>
+  <Privileged>true</Privileged>
+  <Support>https://github.com/dvortsis/ajazz-companion-bridge/issues</Support>
+  <Project>https://github.com/dvortsis/ajazz-companion-bridge</Project>
+  <Overview>Connects an Ajazz AKP05E / Mirabox LCD macro pad plugged into this Unraid server to Bitfocus Companion over the Satellite API (touch strip, dials and keys). Privileged is the simple way to give the container access to the USB HID device; to avoid it, remove Privileged and add the Extra Parameter --device=/dev/hidrawN instead.</Overview>
+  <Category>Tools: HomeAutomation:</Category>
+  <WebUI/>
+  <TemplateURL/>
+  <Icon>https://raw.githubusercontent.com/dvortsis/ajazz-companion-bridge/main/AKP05_icon.png</Icon>
+  <ExtraParams>--restart=unless-stopped</ExtraParams>
+  <Config Name="Companion host" Target="COMPANION_HOST" Default="127.0.0.1" Mode="" Description="IP or hostname of the machine running Bitfocus Companion (Satellite API). Use the Unraid IP if Companion is another container." Type="Variable" Display="always" Required="true" Mask="false">127.0.0.1</Config>
+  <Config Name="Companion port" Target="COMPANION_PORT" Default="16622" Mode="" Description="Satellite API port." Type="Variable" Display="always" Required="true" Mask="false">16622</Config>
+  <Config Name="Log level" Target="LOG_LEVEL" Default="info" Mode="" Description="error, warn, info or debug" Type="Variable" Display="advanced" Required="false" Mask="false">info</Config>
+  <Config Name="USB write delay (ms)" Target="HID_WRITE_DELAY_MS" Default="0" Mode="" Description="Raise to 1-5 if buttons look torn." Type="Variable" Display="advanced" Required="false" Mask="false">0</Config>
+  <Config Name="Config / logs" Target="/config" Default="/mnt/user/appdata/ajazz-bridge" Mode="rw" Description="Log files." Type="Path" Display="advanced" Required="false" Mask="false">/mnt/user/appdata/ajazz-bridge</Config>
+</Container>

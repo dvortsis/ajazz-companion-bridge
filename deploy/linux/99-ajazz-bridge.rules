@@ -1,0 +1,52 @@
+# Ajazz / Mirabox LCD decks: allow the logged-in user (uaccess) and the plugdev group to open them.
+# Ajazz AKP05E
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="0300", ATTRS{idProduct}=="3004", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="0300", ATTRS{idProduct}=="3004", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+# Ajazz AKP153
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="0300", ATTRS{idProduct}=="1530", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="0300", ATTRS{idProduct}=="1530", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+# Ajazz AKP153E
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="0300", ATTRS{idProduct}=="1010", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="0300", ATTRS{idProduct}=="1010", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+# Ajazz AKP153R
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="0300", ATTRS{idProduct}=="1020", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="0300", ATTRS{idProduct}=="1020", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+# Ajazz AKP05E Pro
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="0300", ATTRS{idProduct}=="3013", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="0300", ATTRS{idProduct}=="3013", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+# Mirabox N4E
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="6603", ATTRS{idProduct}=="1007", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="6603", ATTRS{idProduct}=="1007", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+# Mirabox N4
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="6602", ATTRS{idProduct}=="1001", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="6602", ATTRS{idProduct}=="1001", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+# Ajazz AKP05 (3006)
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="0300", ATTRS{idProduct}=="3006", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="0300", ATTRS{idProduct}=="3006", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+# Ajazz AKP05CN Pro
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="0300", ATTRS{idProduct}=="3014", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="0300", ATTRS{idProduct}=="3014", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+# Mirabox N4 Pro E
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="5548", ATTRS{idProduct}=="1021", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="5548", ATTRS{idProduct}=="1021", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+# Mirabox N4 Pro
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="5548", ATTRS{idProduct}=="1008", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="5548", ATTRS{idProduct}=="1008", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+# VSDinside N4
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="5548", ATTRS{idProduct}=="1004", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="5548", ATTRS{idProduct}=="1004", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+# VSDinside N4 Pro
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="5548", ATTRS{idProduct}=="1023", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="5548", ATTRS{idProduct}=="1023", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+# Mirabox MSD Pro
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="0b00", ATTRS{idProduct}=="1003", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="0b00", ATTRS{idProduct}=="1003", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+# CN003
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="1500", ATTRS{idProduct}=="3002", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="1500", ATTRS{idProduct}=="3002", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+# Streonor S10 Pro
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="1500", ATTRS{idProduct}=="3007", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="1500", ATTRS{idProduct}=="3007", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+# SS552
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="0200", ATTRS{idProduct}=="3001", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="0200", ATTRS{idProduct}=="3001", MODE="0660", GROUP="plugdev", TAG+="uaccess"

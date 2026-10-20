@@ -107,7 +107,7 @@ Assign dial turns in Companion's **Rotary Actions** tab on the dial's button (e.
 node index.js
 ```
 
-A tray icon appears. Its menu shows status (deck and Companion connection) and offers **Open log**, **Open folder**, **Reconnect**, **Start with Windows** and **Quit**.
+A tray icon appears. Its menu shows status (deck and Companion connection) and offers **Open log**, **Open folder**, **Reconnect**, **Start at login** and **Quit**.
 
 - If the bridge is started twice, the second copy exits immediately (single-instance lock).
 - Unplug and replug the deck at any time: the bridge removes the surface from Companion, then re-registers it once the deck is back.
@@ -115,7 +115,7 @@ A tray icon appears. Its menu shows status (deck and Companion connection) and o
 
 ## Part 7: Windows Auto-Start
 
-Either use the tray item **Start with Windows**, or:
+Either use the tray item **Start at login**, or:
 
 ```text
 npm run install-startup      (npm run uninstall-startup to remove)
@@ -130,13 +130,44 @@ Each product is one entry in `devices.js` (`SUPPORTED_DEVICES`): USB ids, grid s
 1.  `npm run probe` prints the raw input reports; press every control and compare with `parser.js` (`ACTIONS`).
 2.  Set `tested: true` on the profile once everything works, and update the table above.
 
-## Other platforms
+## Part 9: macOS, Linux and Unraid
 
-The core (USB, image processing, Companion link) is cross-platform; set `BRIDGE_NO_TRAY=1` if the tray icon is unavailable. Auto-start (`install-startup`) is Windows only. The install and full test suite pass on Linux (Debian, Node 22) and CI runs on Ubuntu, but only Windows with the AKP05 has been tried on real hardware. A single-file `.exe` is not offered because `sharp` and `node-hid` are native modules; `setup.cmd` is the one-step installer instead.
+The bridge must run on the machine the deck is plugged into. Companion can be anywhere on the network: set `COMPANION_HOST` to its address (and enable its Satellite API).
 
-## Other platforms
+### macOS
 
-The core (USB, image processing, Companion link) is cross-platform; set `BRIDGE_NO_TRAY=1` if the tray icon is unavailable. Auto-start (`install-startup`) is Windows only. The install and full test suite pass on Linux (Debian, Node 22) and CI runs on Ubuntu, but only Windows with the AKP05 has been tried on real hardware. A single-file `.exe` is not offered because `sharp` and `node-hid` are native modules; `setup.cmd` is the one-step installer instead.
+1.  Install Node.js 20+ (`brew install node`), then `npm install` in this folder and copy `.env.example` to `.env`.
+2.  `node index.js`. A menu-bar icon appears (set `BRIDGE_NO_TRAY=1` to hide it). macOS may ask to allow **Input Monitoring** for your terminal/Node the first time it reads the deck.
+3.  Start at login: `npm run install-startup` (creates a launchd agent, `~/Library/LaunchAgents/com.ajazz.bridge.plist`) or use **Start at login** in the menu. Remove with `npm run uninstall-startup`.
+
+### Linux (desktop or server)
+
+1.  Install Node.js 20+ and, to build the USB module if no prebuilt binary matches: `sudo apt install libudev-dev libusb-1.0-0-dev build-essential`. Then `npm install`.
+2.  Let your user open the deck (otherwise you get a permission error):
+    ```text
+    npm run udev | sudo tee /etc/udev/rules.d/99-ajazz-bridge.rules
+    sudo udevadm control --reload && sudo udevadm trigger     # then unplug and replug the deck
+    ```
+    The rules grant the logged-in desktop user (`uaccess`) and the `plugdev` group. On a headless server add your service user to `plugdev`.
+3.  `node index.js`. The tray icon is only shown when a display server is available (it is off by default over SSH, on servers and in containers; `BRIDGE_NO_TRAY=0` forces it on).
+4.  Start at login/boot: `npm run install-startup` creates a systemd **user** service. Then `systemctl --user start ajazz-bridge`, and `loginctl enable-linger $USER` if it should run without you being logged in. Logs: `journalctl --user -u ajazz-bridge` and `bridge.log`.
+
+### Docker and Unraid
+
+A ready-made image is in the repo (`Dockerfile`, `docker-compose.yml`). It is configured entirely with environment variables; logs go to `/config`.
+
+```text
+docker build -t ajazz-companion-bridge .
+docker run -d --name ajazz-bridge --restart unless-stopped --network host \
+  -e COMPANION_HOST=127.0.0.1 -e COMPANION_PORT=16622 -v $PWD/config:/config \
+  --device=/dev/hidraw0 ajazz-companion-bridge
+```
+
+The deck shows up as `/dev/hidrawN` (`ls -l /dev/hidraw*`; `udevadm info -a /dev/hidrawN | grep -i idVendor`). Pass that device in with `--device`, or use `--privileged` if the number changes between boots. Check the connection with `docker logs ajazz-bridge`: you should see `[HID] Secured …` and `ADD-DEVICE OK`.
+
+**Unraid:** copy `deploy/unraid/ajazz-bridge.xml` to `/boot/config/plugins/dockerMan/templates-user/`, then **Docker > Add Container > ajazz-companion-bridge**. Set **Companion host** to the Unraid IP if Companion is another container (or the other machine's IP). The template uses `--privileged` for USB access; to avoid it, switch Privileged off and add `--device=/dev/hidrawN` under Extra Parameters. Build the image on Unraid first (`docker build -t ajazz-companion-bridge /path/to/ajazz-bridge`) and set the template's Repository to `ajazz-companion-bridge`, or push a `v*` tag to your GitHub fork to publish it to `ghcr.io` with the included workflow. If the deck is plugged into another PC instead, run the bridge on that PC and point it at Unraid's Companion.
+
+What has been verified: install, lint and the test suite on Linux (Debian, Node 22); the Docker image builds, starts, connects to a Companion Satellite server and tolerates a read-only filesystem; the generated systemd unit passes `systemd-analyze verify`; the launchd plist is well-formed XML. Not verified: a real deck on Linux, macOS or Unraid (only Windows with an AKP05E has been tried on hardware), and USB passthrough into a container.
 
 ## Development
 

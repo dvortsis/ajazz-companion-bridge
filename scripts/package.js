@@ -38,6 +38,7 @@ const FILES = [
   'CHANGELOG.md',
   'readme.md',
   'AKP05_icon.ico',
+  'AKP05_icon.png',
 ];
 
 fs.rmSync(path.join(root, 'dist'), { recursive: true, force: true });

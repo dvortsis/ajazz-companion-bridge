@@ -53,7 +53,7 @@ test('tray menu: every item is wired to its action; status and startup toggle up
     'Open log',
     'Open folder',
     'Reconnect',
-    'Start with Windows',
+    'Start at login',
     '<SEPARATOR>',
     'Quit',
   ]);

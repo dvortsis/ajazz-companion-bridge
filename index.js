@@ -17,9 +17,14 @@ const log = require('./log');
 function main() {
   const lock = require('./lock');
   const lockFile = path.join(__dirname, 'bridge.lock');
-  if (!lock.acquire(lockFile)) {
-    log.error('[BRIDGE] Another bridge instance is already running; exiting.');
-    process.exit(0);
+  try {
+    if (!lock.acquire(lockFile)) {
+      log.error('[BRIDGE] Another bridge instance is already running; exiting.');
+      process.exit(0);
+    }
+  } catch (e) {
+    // Read-only install directory (container, locked-down service): run without the single-instance guard.
+    log.warn('[BRIDGE] Single-instance lock unavailable:', e.message || e);
   }
 
   const HID = require('node-hid');

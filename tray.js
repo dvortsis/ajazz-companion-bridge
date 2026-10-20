@@ -1,7 +1,7 @@
 /**
- * tray.js — Windows system-tray icon with status text and a small menu.
+ * tray.js — System-tray / menu-bar icon (Windows, macOS, Linux desktop) with status text and a small menu.
  *
- * Menu: status line, Open log, Open folder, Reconnect, Start with Windows (toggle), Quit.
+ * Menu: status line, Open log, Open folder, Reconnect, Start at login (toggle), Quit.
  */
 'use strict';
 
@@ -17,9 +17,11 @@ const log = require('./log');
  */
 function createTray(actions) {
   try {
-    const icon = fs.readFileSync(path.join(__dirname, 'AKP05_icon.ico')).toString('base64');
+    const icon = fs
+      .readFileSync(path.join(__dirname, process.platform === 'win32' ? 'AKP05_icon.ico' : 'AKP05_icon.png'))
+      .toString('base64');
     const statusItem = { title: 'Starting…', tooltip: 'Bridge status', enabled: false };
-    const startupItem = { title: 'Start with Windows', tooltip: 'Launch at login', checked: !!actions.startupEnabled };
+    const startupItem = { title: 'Start at login', tooltip: 'Launch at login', checked: !!actions.startupEnabled };
     const handlers = [
       null,
       null,

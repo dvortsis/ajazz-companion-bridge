@@ -1,6 +1,6 @@
 {
   "name": "ajazz-bridge",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "A background bridge connecting Ajazz and Mirabox macro pads to Bitfocus Companion.",
   "main": "index.js",
   "scripts": {
@@ -13,7 +13,8 @@
     "format:check": "prettier --check .",
     "install-startup": "node startup.js install",
     "uninstall-startup": "node startup.js uninstall",
-    "package": "node scripts/package.js"
+    "package": "node scripts/package.js",
+    "udev": "node scripts/udev-rules.js"
   },
   "keywords": [],
   "author": "Benjamin Dvortsis",
