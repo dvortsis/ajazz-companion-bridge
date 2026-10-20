@@ -1,0 +1,5 @@
+Dockerfile text eol=lf
+*.rules text eol=lf
+*.sh text eol=lf
+docker-compose.yml text eol=lf
+*.xml text eol=lf
