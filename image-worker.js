@@ -49,6 +49,13 @@ function decode(imgBuffer) {
   return sharp(imgBuffer);
 }
 
+/** Software brightness for one key (percent); 100/undefined = untouched. */
+function dimmed(pipeline, dim) {
+  return dim === undefined || dim === null || dim >= 100
+    ? pipeline
+    : pipeline.modulate({ brightness: Math.max(0, dim) / 100 });
+}
+
 /** Resize to the icon size; 72px sources are upscaled with Lanczos, 112px is already 1:1. */
 function fit(pipeline, size, sourceIsRaw112) {
   if (sourceIsRaw112) return pipeline;
@@ -86,7 +93,11 @@ parentPort.on('message', async (job) => {
 
     if (job.strip) {
       const { geometry } = job.strip;
-      const icon = await fit(decode(imgBuffer), geometry.iconSize, isRaw112).rotate(180).removeAlpha().png().toBuffer();
+      const icon = await dimmed(fit(decode(imgBuffer), geometry.iconSize, isRaw112), job.dim)
+        .rotate(180)
+        .removeAlpha()
+        .png()
+        .toBuffer();
 
       let icons = stripState.get(job.deviceId);
       if (!icons) stripState.set(job.deviceId, (icons = new Array(geometry.zones).fill(null)));
@@ -102,7 +113,7 @@ parentPort.on('message', async (job) => {
     }
 
     log('debug', `[WORKER] ${job.deviceId} slot ${job.slot} | ${OUT_SIZE}x${OUT_SIZE}`);
-    const jpeg = await fit(decode(imgBuffer), OUT_SIZE, isRaw112)
+    const jpeg = await dimmed(fit(decode(imgBuffer), OUT_SIZE, isRaw112), job.dim)
       .rotate(180)
       .removeAlpha()
       .jpeg(JPEG_OUTPUT)

@@ -44,7 +44,7 @@ test('opens a matching deck once, ignores other HID devices and duplicate interf
   m.scan();
   assert.equal(hid.opened.length, 1);
   assert.equal(m.sessions.size, 1);
-  assert.equal(m.describe(), 'Ajazz AKP05');
+  assert.equal(m.describe(), 'Ajazz AKP05E');
   m.stop();
 });
 

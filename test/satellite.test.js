@@ -55,7 +55,7 @@ test('handshake, bitmaps, brightness, keys, held-key release and removal', async
   await waitFor(() => conns[0] && conns[0].lines.some((l) => l.startsWith('ADD-DEVICE')));
   assert.equal(
     conns[0].lines.find((l) => l.startsWith('ADD-DEVICE')),
-    'ADD-DEVICE DEVICEID="AJAZZ_AKP05" PRODUCT_NAME="Ajazz AKP05" KEYS_TOTAL=20 KEYS_PER_ROW=5 BITMAPS=112'
+    'ADD-DEVICE DEVICEID="AJAZZ_AKP05" PRODUCT_NAME="Ajazz AKP05E" KEYS_TOTAL=20 KEYS_PER_ROW=5 BITMAPS=112'
   );
   assert.equal(client.sendKey('AJAZZ_AKP05', 3, true), false, 'not ready before ADD-DEVICE OK');
 

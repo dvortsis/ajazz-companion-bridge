@@ -65,6 +65,7 @@ class DeckSession extends EventEmitter {
     this.autoUpTimers = new Set();
     this.encoderState = new Map();
     this.dialsHeld = new Map();
+    this.touchHeld = new Map();
     this.warnedUnmapped = new Set();
   }
 
@@ -130,6 +131,8 @@ class DeckSession extends EventEmitter {
     clearTimeout(this.pumpTimer);
     for (const t of this.autoUpTimers) clearTimeout(t);
     this.autoUpTimers.clear();
+    for (const t of this.touchHeld.values()) clearTimeout(t);
+    this.touchHeld.clear();
     const queued = this.writeQueue.splice(0);
     for (const item of queued) if (item.onLast) item.onLast();
     this.pending.clear();
@@ -259,6 +262,8 @@ class DeckSession extends EventEmitter {
     const strip = this.layout.strip;
 
     const job = { deviceId: this.deviceId, base64, slot };
+    const dim = this.config.keyDim && this.config.keyDim.get(keyIdx);
+    if (dim !== undefined) job.dim = dim;
     if (zone !== undefined) {
       const othersPending = [...this.pending.keys()].some((k) =>
         this.layout.stripZoneBySlot.has(getDrawSlot(this.layout, k))
@@ -353,6 +358,8 @@ class DeckSession extends EventEmitter {
       return;
     }
 
+    if (this.config.touchHold && eventName.startsWith('touch_')) return this.handleTouchHold(key);
+
     if (isStatelessButtonEvent(eventName)) {
       // These controls may never report a release; ignore explicit release packets and synthesise our own.
       if (!ev.pressed) return;
@@ -366,6 +373,24 @@ class DeckSession extends EventEmitter {
     }
 
     this.satellite.sendKey(this.deviceId, key, ev.pressed);
+  }
+
+  /**
+   * Touch hold: the first touch report presses the key; further reports keep it pressed, and it is released
+   * touchHoldMs after the last one. If the firmware never repeats reports this is just a slightly longer click.
+   */
+  handleTouchHold(key) {
+    const release = () => {
+      this.touchHeld.delete(key);
+      this.satellite.sendKey(this.deviceId, key, false);
+    };
+    const held = this.touchHeld.get(key);
+    if (held) {
+      clearTimeout(held);
+    } else {
+      this.satellite.sendKey(this.deviceId, key, true);
+    }
+    this.touchHeld.set(key, setTimeout(release, this.config.touchHoldMs));
   }
 
   /**

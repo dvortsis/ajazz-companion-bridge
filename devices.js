@@ -131,11 +131,11 @@ function profile(base) {
  * Companion is told the deck has.
  */
 const SUPPORTED_DEVICES = [
-  // Tested hardware. Upstream calls PID 0x3004 the "AKP05E"; the id/name are kept so existing Companion
-  // surface configuration keeps working.
+  // Tested hardware: USB 0300:3004, called the AKP05E upstream. The DEVICEID ("AJAZZ_AKP05") is deliberately kept so
+  // existing Companion surface configuration keeps working; only the displayed product name says AKP05E.
   profile({
     id: 'AJAZZ_AKP05',
-    name: 'Ajazz AKP05',
+    name: 'Ajazz AKP05E',
     vid: 0x0300,
     pid: 0x3004,
     rows: 4,

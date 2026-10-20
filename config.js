@@ -40,6 +40,19 @@ function imageSize() {
   return 112;
 }
 
+/** "key:percent,key:percent" → Map(key → 0..100). Bad entries are reported and skipped. */
+function parseKeyDim() {
+  const map = new Map();
+  const raw = process.env.BRIDGE_KEY_BRIGHTNESS;
+  if (!raw) return map;
+  for (const part of raw.split(',')) {
+    const m = /^\s*(\d+)\s*:\s*(\d{1,3})\s*$/.exec(part);
+    if (!m || Number(m[2]) > 100) warnings.push(`BRIDGE_KEY_BRIGHTNESS entry "${part.trim()}" is invalid; skipped`);
+    else map.set(Number(m[1]), Number(m[2]));
+  }
+  return map;
+}
+
 const config = {
   host: str('COMPANION_HOST', '127.0.0.1'),
   port: num('COMPANION_PORT', 16622, { min: 1, max: 65535, int: true }),
@@ -78,6 +91,11 @@ const config = {
   encoderAccelWindowMs: num('BRIDGE_ENCODER_ACCEL_WINDOW_MS', 80, { min: 10, int: true }),
   /** Brightness (0-100) used when idle; 0 = off. */
   idleDimPercent: num('BRIDGE_IDLE_DIM_PERCENT', 0, { min: 0, max: 100, int: true }),
+  /** Per-key brightness in percent for Companion keys, e.g. BRIDGE_KEY_BRIGHTNESS=0:60,5:80 (applied to the image). */
+  keyDim: parseKeyDim(),
+  /** Touch zones stay pressed while the firmware keeps repeating touch reports (verify with `npm run probe`). */
+  touchHold: flag('BRIDGE_TOUCH_HOLD'),
+  touchHoldMs: num('BRIDGE_TOUCH_HOLD_MS', 200, { min: 50, int: true }),
   /** Holding a dial push and turning sends the turn to an extra Companion row (row 4). */
   shiftRotate: flag('BRIDGE_SHIFT_ROTATE'),
   /** Dial pushes send real press/release (long-press) instead of a synthetic click. */
@@ -122,6 +140,9 @@ const KNOWN = new Set([
   'BRIDGE_IDLE_OFF_MINUTES',
   'BRIDGE_IDLE_DIM_PERCENT',
   'BRIDGE_SHIFT_ROTATE',
+  'BRIDGE_KEY_BRIGHTNESS',
+  'BRIDGE_TOUCH_HOLD',
+  'BRIDGE_TOUCH_HOLD_MS',
   'BRIDGE_DIAL_PUSH_HOLD',
   'BRIDGE_NO_TRAY',
   'LOG_LEVEL',

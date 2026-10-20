@@ -236,3 +236,28 @@ test('idle dim level is used instead of off', async () => {
   await waitFor(() => hid.writes.some((b) => b[6] === 0x4c && b[11] === 15));
   session.close();
 });
+
+test('touch hold: stays pressed while reports repeat, releases touchHoldMs after the last', async () => {
+  const { hid, satellite, session } = make({ touchHold: true, touchHoldMs: 60 });
+  hid.emit('data', report(0x40));
+  await waitFor(() => satellite.sent.length === 1);
+  for (let i = 0; i < 4; i++) {
+    await tick(30);
+    hid.emit('data', report(0x40));
+  }
+  assert.deepEqual(satellite.sent, [['key', 10, true]], 'still held while reports keep coming');
+  await waitFor(() => satellite.sent.length === 2);
+  assert.deepEqual(satellite.sent[1], ['key', 10, false]);
+  session.close();
+});
+
+test('per-key dim percent is passed to the image worker only for configured keys', async () => {
+  const { satellite, worker, session } = make({ keyDim: new Map([[0, 40]]) });
+  satellite.handlers.onBitmap(0, 'AAAA');
+  satellite.handlers.onBitmap(1, 'BBBB');
+  await waitFor(() => worker.requests.filter((r) => !r.reset).length === 2);
+  const [a, b] = worker.requests.filter((r) => !r.reset);
+  assert.equal(a.dim, 40);
+  assert.equal(b.dim, undefined);
+  session.close();
+});

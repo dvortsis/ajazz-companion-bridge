@@ -39,3 +39,17 @@ test('config falls back on invalid values and reports ignored settings', () => {
   assert.ok(config.warnings.some((w) => w.includes('COMPANION_PORT')));
   assert.ok(config.warnings.some((w) => w.includes('AKP05_TOUCH_KEYS')));
 });
+
+test('BRIDGE_KEY_BRIGHTNESS parses valid entries and reports bad ones', () => {
+  process.env.BRIDGE_KEY_BRIGHTNESS = '0:60, 5:80,x:1,7:150';
+  delete require.cache[require.resolve('../config')];
+  const cfg = require('../config');
+  assert.deepEqual(
+    [...cfg.keyDim],
+    [
+      [0, 60],
+      [5, 80],
+    ]
+  );
+  assert.equal(cfg.warnings.filter((w) => w.includes('BRIDGE_KEY_BRIGHTNESS')).length, 2);
+});

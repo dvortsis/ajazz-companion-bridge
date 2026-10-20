@@ -108,7 +108,7 @@ test('satellite lines match the wire format the tested bridge used', () => {
   const akp05 = devices.SUPPORTED_DEVICES[0];
   assert.equal(
     buildAddDeviceBuffer('AJAZZ_AKP05', akp05, 112).toString('ascii'),
-    'ADD-DEVICE DEVICEID="AJAZZ_AKP05" PRODUCT_NAME="Ajazz AKP05" KEYS_TOTAL=20 KEYS_PER_ROW=5 BITMAPS=112\n'
+    'ADD-DEVICE DEVICEID="AJAZZ_AKP05" PRODUCT_NAME="Ajazz AKP05E" KEYS_TOTAL=20 KEYS_PER_ROW=5 BITMAPS=112\n'
   );
   assert.ok(buildAddDeviceBuffer('x', akp05, 72, true).toString('ascii').endsWith('BITMAPS=72\r\n'));
   assert.equal(keyToRowCol(17, 5), '3/2');

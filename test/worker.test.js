@@ -105,3 +105,24 @@ test('worker client: a killed worker rejects in-flight jobs with workerCrashed a
     await w.terminate();
   }
 });
+
+test('worker: per-key dim scales brightness; strip icons dim individually', async () => {
+  const w = new WorkerClient();
+  try {
+    const full = await w.request({ deviceId: 'd', slot: 10, base64: solid(200, 200, 200) });
+    const half = await w.request({ deviceId: 'd', slot: 10, base64: solid(200, 200, 200), dim: 50 });
+    const off = await w.request({ deviceId: 'd', slot: 10, base64: solid(200, 200, 200), dim: 0 });
+    const f = (await pixel(full.jpeg, 50, 50))[0];
+    const h = (await pixel(half.jpeg, 50, 50))[0];
+    const o = (await pixel(off.jpeg, 50, 50))[0];
+    assert.ok(f > 180, `full ${f}`);
+    assert.ok(h > 70 && h < 130, `half ${h}`);
+    assert.ok(o < 15, `off ${o}`);
+    await w.request({ ...stripJob('s', 0, solid(200, 200, 200), false), dim: 50 });
+    const strip = await w.request({ ...stripJob('s', 3, solid(200, 200, 200), true) });
+    assert.ok((await pixel(strip.jpeg, 740, 56))[0] < 130, 'dimmed zone 0');
+    assert.ok((await pixel(strip.jpeg, 50, 56))[0] > 180, 'undimmed zone 3');
+  } finally {
+    await w.terminate();
+  }
+});

@@ -12,7 +12,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "install-startup": "node startup.js install",
-    "uninstall-startup": "node startup.js uninstall"
+    "uninstall-startup": "node startup.js uninstall",
+    "package": "node scripts/package.js"
   },
   "keywords": [],
   "author": "Benjamin Dvortsis",

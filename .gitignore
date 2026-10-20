@@ -6,3 +6,4 @@ bridge.lock
 *.lnk
 .DS_Store
 Thumbs.db
+dist/

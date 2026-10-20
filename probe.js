@@ -28,10 +28,14 @@ function run() {
     const p = SUPPORTED_DEVICES.find((x) => matchesProfile(h, x));
     console.log(`Opening ${p.name} (${h.vendorId.toString(16)}:${h.productId.toString(16)}, tested=${p.tested})`);
     const dev = new HID.HID(h.path);
+    let last = Date.now();
     dev.on('data', (d) => {
+      const now = Date.now();
+      const dt = now - last;
+      last = now;
       const known = d[0] === 0x41 && d[1] === 0x43 && d[2] === 0x4b;
       console.log(
-        `${p.id} ${known ? 'ACK' : '???'} action=0x${d[9].toString(16)} state=0x${d[10].toString(16)} | ${d.subarray(0, 16).toString('hex')}`
+        `${p.id} +${dt}ms ${known ? 'ACK' : '???'} action=0x${d[9].toString(16)} state=0x${d[10].toString(16)} | ${d.subarray(0, 16).toString('hex')}`
       );
     });
     dev.on('error', (e) => console.error(`${p.id} error:`, e.message || e));
