@@ -1,46 +1,29 @@
 /**
  * image-worker.js — Background thread for preparing images so the main app stays responsive.
  *
- * AKP05 “giant canvas” touch strip:
- *   The bottom strip is physically one long 800×112 screen. Companion still sends four separate button
- *   images (one per soft key). This worker stitches those four square icons onto a single black 800×112
- *   image—like placing four stickers on one strip—then encodes that whole strip as one JPEG for USB.
- *   Other keys (main LCD) stay a single square image each.
+ * Touch strip (e.g. AKP05, 800×112): Companion sends one square image per strip key. This worker keeps the
+ * latest icon per zone (per device) and composites them onto one black strip canvas, then encodes the whole
+ * strip as a single JPEG. Other keys are a single square JPEG each.
+ *
+ * Job:    { id, deviceId, bitmapSize, base64, slot?, strip?: {zone, geometry, padding, quality}, render?: bool }
+ * Reply:  { id, ok, jpeg?, skipped?, error? }
  */
 'use strict';
 
 const { parentPort } = require('worker_threads');
 const sharp = require('sharp');
-const { getHwScreenFromCompanionKey } = require('./devices');
-
-const NUM_TOUCH_KEYS = Math.min(7, Math.max(1, parseInt(process.env.AKP05_TOUCH_KEYS || '4', 10)));
-const touchState = new Array(NUM_TOUCH_KEYS).fill(null);
-const TOUCH_X = [];
-// Outer icons sit flush with the strip edges so the icons line up with the dials underneath;
-// inner icons are spread evenly between them.
-const STRIP_WIDTH = 800;
-const ICON_SIZE = 112;
-for (let i = 0; i < NUM_TOUCH_KEYS; i++) {
-  TOUCH_X.push(
-    NUM_TOUCH_KEYS === 1
-      ? (STRIP_WIDTH - ICON_SIZE) / 2
-      : Math.round((i * (STRIP_WIDTH - ICON_SIZE)) / (NUM_TOUCH_KEYS - 1))
-  );
-}
-TOUCH_X.reverse();
+const config = require('./config');
+const { stripIconX } = require('./layout');
 
 sharp.cache(false);
 sharp.concurrency(1);
 
-/** Typical BITMAP payload from Companion: raw RGB, one square per key. */
-const RAW = 112;
-const RAW_RGB_LEN = RAW * RAW * 3;
+const OUT_SIZE = 112;
+const RGB_112_LEN = 112 * 112 * 3;
+const RGB_72_LEN = 72 * 72 * 3;
 
-const JPEG_QUALITY = Math.min(100, Math.max(40, parseInt(process.env.AKP05_JPEG_QUALITY || '75', 10) || 75));
-
-/** JPEG settings for the device decoder (quality overridable with AKP05_JPEG_QUALITY). */
 const JPEG_OUTPUT = {
-  quality: JPEG_QUALITY,
+  quality: config.jpegQuality,
   progressive: false,
   chromaSubsampling: '4:2:0',
   mozjpeg: false,
@@ -48,100 +31,84 @@ const JPEG_OUTPUT = {
   overshootDeringing: false,
 };
 
-const OUT_SIZE = 112;
+/** deviceId → array of PNG icon buffers, one per strip zone. */
+const stripState = new Map();
+
+function log(level, msg) {
+  parentPort.postMessage({ type: 'log', level, msg });
+}
+
+/** Companion bitmap bytes → sharp pipeline. Raw RGB 112² / 72² or any encoded image. */
+function decode(imgBuffer) {
+  if (imgBuffer.length === RGB_112_LEN) {
+    return sharp(imgBuffer, { raw: { width: 112, height: 112, channels: 3 } });
+  }
+  if (imgBuffer.length === RGB_72_LEN) {
+    return sharp(imgBuffer, { raw: { width: 72, height: 72, channels: 3 } });
+  }
+  return sharp(imgBuffer);
+}
+
+/** Resize to the icon size; 72px sources are upscaled with Lanczos, 112px is already 1:1. */
+function fit(pipeline, size, sourceIsRaw112) {
+  if (sourceIsRaw112) return pipeline;
+  return pipeline.resize(size, size, { fit: 'fill', kernel: sharp.kernel.lanczos3 });
+}
+
+async function renderStrip(deviceId, strip) {
+  const { geometry, padding, quality } = strip;
+  const icons = stripState.get(deviceId) || [];
+  const xs = stripIconX(geometry, padding);
+  const composites = [];
+  for (let i = 0; i < geometry.zones; i++) {
+    if (icons[i]) composites.push({ input: icons[i], left: xs[i], top: 0 });
+  }
+  return sharp({
+    create: { width: geometry.width, height: geometry.height, channels: 3, background: { r: 0, g: 0, b: 0 } },
+  })
+    .composite(composites)
+    .jpeg({ quality, progressive: false, chromaSubsampling: '4:2:0' })
+    .toBuffer();
+}
 
 parentPort.on('message', async (job) => {
   if (!job || job.type !== 'bitmap' || typeof job.id !== 'number') return;
 
   try {
-    const keyIdx = job.keyIdx != null ? job.keyIdx | 0 : 0;
-    const hwIndex = getHwScreenFromCompanionKey(keyIdx);
-    if (hwIndex == null || hwIndex < 0) {
-      parentPort.postMessage({
-        id: job.id,
-        keyIdx: job.keyIdx,
-        ok: true,
-        skipped: true,
-      });
+    if (job.reset) {
+      stripState.delete(job.deviceId);
+      parentPort.postMessage({ id: job.id, ok: true, skipped: true });
       return;
     }
 
     const imgBuffer = Buffer.from(job.base64, 'base64');
+    const isRaw112 = imgBuffer.length === RGB_112_LEN;
 
-    let pipeline;
-    if (imgBuffer.length === RAW_RGB_LEN) {
-      pipeline = sharp(imgBuffer, {
-        raw: { width: RAW, height: RAW, channels: 3 },
-      });
-    } else if (imgBuffer.length === 15552) {
-      pipeline = sharp(imgBuffer, { raw: { width: 72, height: 72, channels: 3 } });
-    } else {
-      pipeline = sharp(imgBuffer);
-    }
+    if (job.strip) {
+      const { geometry } = job.strip;
+      const icon = await fit(decode(imgBuffer), geometry.iconSize, isRaw112).rotate(180).removeAlpha().png().toBuffer();
 
-    const isTouch = hwIndex >= 0 && hwIndex <= 3;
+      let icons = stripState.get(job.deviceId);
+      if (!icons) stripState.set(job.deviceId, (icons = new Array(geometry.zones).fill(null)));
+      icons[job.strip.zone] = icon;
 
-    if (isTouch) {
-      // Strip path: prepare each icon, keep PNG buffers for layering, then one JPEG for the full bar.
-      const iconBuf = await pipeline
-        .resize(112, 112, { fit: 'fill', kernel: sharp.kernel.nearest })
-        .rotate(180)
-        .removeAlpha()
-        .png()
-        .toBuffer();
-
-      if (hwIndex < NUM_TOUCH_KEYS) {
-        touchState[hwIndex] = iconBuf;
+      if (!job.render) {
+        parentPort.postMessage({ id: job.id, ok: true, skipped: true });
+        return;
       }
-
-      const composites = [];
-      for (let i = 0; i < NUM_TOUCH_KEYS; i++) {
-        if (touchState[i]) {
-          composites.push({
-            input: touchState[i],
-            left: TOUCH_X[i],
-            top: 0,
-          });
-        }
-      }
-
-      const jpeg = await sharp({
-        create: {
-          width: 800,
-          height: 112,
-          channels: 3,
-          background: { r: 0, g: 0, b: 0 },
-        },
-      })
-        .composite(composites)
-        .jpeg({ quality: 75, progressive: false, chromaSubsampling: '4:2:0' })
-        .toBuffer();
-
-      parentPort.postMessage({ id: job.id, keyIdx: job.keyIdx, ok: true, jpeg });
+      const jpeg = await renderStrip(job.deviceId, job.strip);
+      parentPort.postMessage({ id: job.id, ok: true, jpeg });
       return;
     }
 
-    console.log(`[WORKER] Key ${keyIdx} -> HW ${hwIndex} | 112x112`);
-
-    const jpeg = await pipeline
-      .resize(OUT_SIZE, OUT_SIZE, { fit: 'fill', kernel: sharp.kernel.nearest })
+    log('debug', `[WORKER] ${job.deviceId} slot ${job.slot} | ${OUT_SIZE}x${OUT_SIZE}`);
+    const jpeg = await fit(decode(imgBuffer), OUT_SIZE, isRaw112)
       .rotate(180)
       .removeAlpha()
       .jpeg(JPEG_OUTPUT)
       .toBuffer();
-
-    parentPort.postMessage({
-      id: job.id,
-      keyIdx: job.keyIdx,
-      ok: true,
-      jpeg,
-    });
+    parentPort.postMessage({ id: job.id, ok: true, jpeg });
   } catch (e) {
-    parentPort.postMessage({
-      id: job.id,
-      keyIdx: job.keyIdx,
-      ok: false,
-      error: e instanceof Error ? e.message : String(e),
-    });
+    parentPort.postMessage({ id: job.id, ok: false, error: e instanceof Error ? e.message : String(e) });
   }
 });
