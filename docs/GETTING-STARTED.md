@@ -41,6 +41,12 @@ Companion can try to drive Mirabox-style pads on its own, and then the bridge ca
 
 If you don't own an Elgato Stream Deck you can switch that option off too.
 
+## Easiest route: the ready-to-run download
+
+On the project's [Releases page](https://github.com/dvortsis/ajazz-companion-bridge/releases) download `ajazz-bridge-<version>-windows-x64.zip`, extract it to a folder you will keep (for example `C:\Ajazz-Bridge`), and **skip to Step 5**. It already contains Node.js, so there is nothing to install and no `setup.cmd` to run. To start automatically with Windows, double-click `install-startup.cmd` in that folder.
+
+Otherwise, continue with Step 3 and Step 4 to build it from the source download.
+
 ## Step 3: Install Node.js
 
 1. Go to [nodejs.org](https://nodejs.org/) and download the **LTS** version (version 20 or newer).

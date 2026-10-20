@@ -19,13 +19,26 @@ Companion is free software that turns buttons into shortcuts: control lights, st
 - **Bitfocus Companion** 3.0 or newer, running on that computer or any other computer on your network.
 - **Node.js** (a free program that runs the bridge), version 20 or newer, from [nodejs.org](https://nodejs.org/). Pick the "LTS" download.
 
+## Download (no Node.js needed)
+
+Every release on the [Releases page](https://github.com/dvortsis/ajazz-companion-bridge/releases) has ready-to-run downloads that already include everything the bridge needs:
+
+| Your computer                | Download                                    |
+| :--------------------------- | :------------------------------------------ |
+| Windows                      | `ajazz-bridge-<version>-windows-x64.zip`    |
+| Mac with Apple silicon (M1+) | `ajazz-bridge-<version>-macos-arm64.tar.gz` |
+| Mac with an Intel chip       | `ajazz-bridge-<version>-macos-x64.tar.gz`   |
+| Linux (64-bit)               | `ajazz-bridge-<version>-linux-x64.tar.gz`   |
+
+Unzip it somewhere permanent, then follow the steps below from step 5 (Windows: double-click `launch-bridge.vbs`; Mac: double-click `Start Ajazz Bridge.command`, see [the Mac notes](docs/PLATFORMS.md#macos); Linux: run `./start.sh`). Steps 1 and 2 (Companion settings) still apply.
+
 ## Set it up in 5 steps (Windows)
 
 New to this? The full walkthrough with every click is in **[docs/GETTING-STARTED.md](docs/GETTING-STARTED.md)**. The short version:
 
 1. **Turn on Companion's "Satellite API"**: in Companion open _Settings_ → _Satellite API_ and switch it on (port `16622`).
 2. **Stop Companion from grabbing the pad itself**: _Settings_ → _Surfaces_ → switch **off** "Enable connected Mirabox Stream Dock devices".
-3. **Install Node.js** from [nodejs.org](https://nodejs.org/) (keep the default options).
+3. **Install Node.js** from [nodejs.org](https://nodejs.org/) (keep the default options). _Skip this if you downloaded the ready-to-run zip above._
 4. **Download this project** (green **Code** button on GitHub → _Download ZIP_), unzip it somewhere permanent, such as `C:\Ajazz-Bridge`, and double-click **`setup.cmd`**. It installs what the bridge needs and asks whether to start it automatically when you log in.
 5. **Start it**: double-click **`launch-bridge.vbs`** (or run `npm start`). A small icon appears in the system tray (bottom-right, near the clock). Within a few seconds your pad lights up with your Companion buttons.
 

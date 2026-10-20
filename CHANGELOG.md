@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+
+- Ready-to-run release bundles for Windows (`.zip`), macOS arm64 and x64 and Linux x64 (`.tar.gz`), built and attached to each GitHub release by `.github/workflows/release.yml`. `npm run package` builds the bundle for the current OS; bundles include Node.js, the docs and launcher scripts.
+
 ### Changed
 
 - Documentation rewritten for non-technical users: a plain-language readme, a step-by-step getting-started guide (`docs/GETTING-STARTED.md`) with a glossary, a troubleshooting guide (`docs/TROUBLESHOOTING.md`), friendlier platform, configuration and device pages, and clearer `.env.example` comments.

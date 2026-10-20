@@ -8,6 +8,18 @@ The bridge must run on the machine the deck is plugged into. Companion can be an
 
 **Verification status:** only Windows with an AKP05E has been run against a real deck. Linux (Debian, Node 22) passes install, lint and the full test suite; the Docker image builds, starts, connects to a Satellite server and runs on a read-only filesystem; the generated systemd unit passes `systemd-analyze verify`; the launchd plist is well-formed. A real deck on macOS, Linux or Unraid and USB passthrough into a container have not been tried.
 
+## Ready-to-run downloads
+
+The [Releases page](https://github.com/dvortsis/ajazz-companion-bridge/releases) offers bundles for Windows (`.zip`), macOS Apple silicon and Intel (`.tar.gz`) and Linux (`.tar.gz`). Each contains the bridge, its dependencies, the docs and its own copy of Node.js, so you do not install Node. Unpack it somewhere permanent and use the launcher for your system:
+
+| System  | Start                                                           | Start at login                                                |
+| :------ | :-------------------------------------------------------------- | :------------------------------------------------------------ |
+| Windows | double-click `launch-bridge.vbs` (or `start.cmd` to see output) | double-click `install-startup.cmd`                            |
+| macOS   | double-click `Start Ajazz Bridge.command` (or `./start.sh`)     | run `./install-startup.sh` in Terminal                        |
+| Linux   | `./start.sh`                                                    | `./install-startup.sh` (see the Linux section for udev rules) |
+
+You build the same bundle yourself with `npm run package` (on the OS and CPU you want to ship for). Pushing a `v*` tag makes GitHub build all bundles and attach them to the release (`.github/workflows/release.yml`).
+
 ## Windows
 
 1. Install Node.js 20+. Double-click `setup.cmd`, or run `npm install` and copy `.env.example` to `.env`.
@@ -16,6 +28,8 @@ The bridge must run on the machine the deck is plugged into. Companion can be an
 4. No Node on the target PC? `npm run package` builds `dist/ajazz-bridge-portable.zip` with Node and the native modules included (build it on the OS you ship to).
 
 ## macOS
+
+**If you used the ready-to-run download:** macOS puts downloaded files in "quarantine", so the first launch can be blocked with _"cannot be opened because the developer cannot be verified"_. Fix it once by opening Terminal, typing `xattr -dr com.apple.quarantine ` (with a trailing space), dragging the unpacked folder onto the Terminal window, and pressing Enter. Then double-click `Start Ajazz Bridge.command` (if macOS still objects, right-click it and choose **Open**). The bundles are not code-signed.
 
 Step 1 uses [Homebrew](https://brew.sh). If you don't have it, install Node.js from [nodejs.org](https://nodejs.org/) instead and skip that command.
 
