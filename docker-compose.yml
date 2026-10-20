@@ -1,4 +1,4 @@
-# docker compose up -d   (build locally: docker compose build)
+# docker compose up -d   (pulls the published image; to build locally, swap the image line for `build: .`)
 services:
   ajazz-bridge:
     image: ghcr.io/dvortsis/ajazz-companion-bridge:latest # or build locally: replace with `build: .`
