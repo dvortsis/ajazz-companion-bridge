@@ -16,9 +16,16 @@ const { getHwScreenFromCompanionKey } = require('./devices');
 const NUM_TOUCH_KEYS = Math.min(7, Math.max(1, parseInt(process.env.AKP05_TOUCH_KEYS || '4', 10)));
 const touchState = new Array(NUM_TOUCH_KEYS).fill(null);
 const TOUCH_X = [];
-const ZONE_WIDTH = 800 / NUM_TOUCH_KEYS;
+// Outer icons sit flush with the strip edges so the icons line up with the dials underneath;
+// inner icons are spread evenly between them.
+const STRIP_WIDTH = 800;
+const ICON_SIZE = 112;
 for (let i = 0; i < NUM_TOUCH_KEYS; i++) {
-  TOUCH_X.push(Math.round(i * ZONE_WIDTH + (ZONE_WIDTH - 112) / 2));
+  TOUCH_X.push(
+    NUM_TOUCH_KEYS === 1
+      ? (STRIP_WIDTH - ICON_SIZE) / 2
+      : Math.round((i * (STRIP_WIDTH - ICON_SIZE)) / (NUM_TOUCH_KEYS - 1))
+  );
 }
 TOUCH_X.reverse();
 

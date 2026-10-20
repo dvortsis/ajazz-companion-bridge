@@ -87,7 +87,7 @@ const AKP05_BITMAP_SIZE = (() => {
 
 /** Milliseconds between consecutive 1025-byte HID chunks (default 0 = max throughput). Invalid env → 0. */
 const HID_WRITE_DELAY_MS = (() => {
-  const v = process.env.AKP05_HID_WRITE_DELAY_MS;
+  const v = process.env.HID_WRITE_DELAY_MS ?? process.env.AKP05_HID_WRITE_DELAY_MS;
   if (v === undefined || v === '') return 0;
   const n = parseFloat(v);
   if (Number.isNaN(n) || n < 0) return 0;
@@ -569,6 +569,12 @@ function connectSockets() {
       console.log('[DEBUG RX HEX]', chunk.toString('hex'));
     }
     appendVisualData(chunk.toString('utf8'));
+  });
+
+  // Without a listener, a refused connection (Companion not running) is an uncaught exception.
+  // 'close' always follows 'error' and handles the reconnect.
+  sSock.on('error', (e) => {
+    console.error('[VISUAL] Socket error:', e.message || e);
   });
 
   sSock.on('close', () => {
