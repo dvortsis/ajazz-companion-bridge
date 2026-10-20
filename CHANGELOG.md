@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Changed
+
+- Repository reorganised: program code moved to `src/`, icons and screenshot to `assets/`, `readme.md` renamed `README.md`, the Prettier config moved into `package.json`. Commands (`npm start`, `npm run probe`, `install-startup`, `package`), the release bundles and the Docker image work as before; the app-store icon URL now points at `assets/`.
+
 ### Verified
 
 - On a real Unraid 7.3.2 server (Docker 29.5.3) with an AKP05E: the published image ran without `--privileged` with only `/dev/hidraw7` mapped, registered with a real Companion container, drew all 14 images and delivered key presses, the four touch zones, a swipe, dial turns and a dial push, all acknowledged with no warnings. The pad creates two hidraw nodes (vendor-defined `input0` and a keyboard `input1`); the bridge correctly uses the vendor-defined one.

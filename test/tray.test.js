@@ -32,7 +32,7 @@ Module._load = function (request, ...rest) {
   if (request === 'systray2') return { default: FakeSysTray };
   return realLoad.call(this, request, ...rest);
 };
-const { createTray } = require('../tray');
+const { createTray } = require('../src/tray');
 Module._load = realLoad;
 
 test('tray menu: every item is wired to its action; status and startup toggle update the menu', async () => {

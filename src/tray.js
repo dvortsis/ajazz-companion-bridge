@@ -9,6 +9,7 @@ const fs = require('fs');
 const path = require('path');
 const SysTray = require('systray2').default;
 const log = require('./log');
+const { ASSETS } = require('./paths');
 
 /**
  * @param {{openLog: Function, openFolder: Function, reconnect: Function, toggleStartup: () => boolean,
@@ -18,7 +19,7 @@ const log = require('./log');
 function createTray(actions) {
   try {
     const icon = fs
-      .readFileSync(path.join(__dirname, process.platform === 'win32' ? 'AKP05_icon.ico' : 'AKP05_icon.png'))
+      .readFileSync(path.join(ASSETS, process.platform === 'win32' ? 'AKP05_icon.ico' : 'AKP05_icon.png'))
       .toString('base64');
     const statusItem = { title: 'Starting…', tooltip: 'Bridge status', enabled: false };
     const startupItem = { title: 'Start at login', tooltip: 'Launch at login', checked: !!actions.startupEnabled };

@@ -7,8 +7,9 @@
 'use strict';
 
 const path = require('path');
+const { ROOT } = require('./paths');
 
-require('dotenv').config({ path: path.join(__dirname, '.env'), quiet: true });
+require('dotenv').config({ path: path.join(ROOT, '.env'), quiet: true });
 
 const warnings = [];
 
@@ -110,7 +111,7 @@ const config = {
   idleOffMinutes: num('BRIDGE_IDLE_OFF_MINUTES', 0, { min: 0 }),
 
   logLevel: str('LOG_LEVEL', 'info').toLowerCase(),
-  logDir: str('LOG_DIR', __dirname),
+  logDir: str('LOG_DIR', ROOT),
   logMaxBytes: num('LOG_MAX_BYTES', 5 * 1024 * 1024, { min: 64 * 1024, int: true }),
   logBackups: num('LOG_BACKUPS', 3, { min: 0, max: 20, int: true }),
 

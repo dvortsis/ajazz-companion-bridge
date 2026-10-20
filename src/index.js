@@ -15,10 +15,11 @@ const path = require('path');
 const { spawn } = require('child_process');
 const config = require('./config');
 const log = require('./log');
+const { ROOT } = require('./paths');
 
 function main() {
   const lock = require('./lock');
-  const lockFile = path.join(__dirname, 'bridge.lock');
+  const lockFile = path.join(ROOT, 'bridge.lock');
   try {
     if (!lock.acquire(lockFile)) {
       log.error('[BRIDGE] Another bridge instance is already running; exiting.');
@@ -97,7 +98,7 @@ function main() {
     tray = createTray({
       startupEnabled: startup.isEnabled(),
       openLog: () => open(log.file, process.platform === 'win32' ? 'notepad.exe' : opener),
-      openFolder: () => open(__dirname),
+      openFolder: () => open(ROOT),
       reconnect: () => {
         satellite.reconnect();
         manager.scan();

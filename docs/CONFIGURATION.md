@@ -11,7 +11,7 @@ HID_WRITE_DELAY_MS=2
 
 The rest of this page is the complete reference for advanced users.
 
-Settings come from `.env` in the bridge folder (copy `.env.example`) or from real environment variables, which win over `.env`. Every setting is optional. Invalid values fall back to the default and unknown `AKP05_*`, `COMPANION_*`, `HID_*`, `SATELLITE_*`, `BRIDGE_*` and `LOG_*` names are reported as `[CONFIG]` warnings at startup. Parsing lives in `config.js`.
+Settings come from `.env` in the bridge folder (copy `.env.example`) or from real environment variables, which win over `.env`. Every setting is optional. Invalid values fall back to the default and unknown `AKP05_*`, `COMPANION_*`, `HID_*`, `SATELLITE_*`, `BRIDGE_*` and `LOG_*` names are reported as `[CONFIG]` warnings at startup. Parsing lives in `src/config.js`.
 
 ## Companion link
 

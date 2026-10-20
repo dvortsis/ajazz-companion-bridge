@@ -2,9 +2,9 @@ Project: Ajazz / Mirabox deck bridge for Bitfocus Companion (Satellite API). Doc
 Rules:
 - Satellite protocol: wait for BEGIN, then ADD-DEVICE DEVICEID=.. PRODUCT_NAME=.. KEYS_TOTAL=.. KEYS_PER_ROW=.. BITMAPS=..;
   answer PING with PONG; send KEY-PRESS / KEY-ROTATE; REMOVE-DEVICE when a deck goes away.
-- Image work (sharp) stays off the main thread in image-worker.js.
-- USB: report id 0x00 then up to 1024 payload bytes per report; commands in protocol.js.
-- Product-specific data (ids, init bytes, layouts) lives only in devices.js profiles.
-- Settings are read only in config.js; every new setting needs .env.example, docs/CONFIGURATION.md and a test.
+- Image work (sharp) stays off the main thread in src/image-worker.js.
+- USB: report id 0x00 then up to 1024 payload bytes per report; commands in src/protocol.js.
+- Product-specific data (ids, init bytes, layouts) lives only in src/devices.js profiles.
+- Settings are read only in src/config.js; every new setting needs .env.example, docs/CONFIGURATION.md and a test.
 - Commits: Conventional Commits (see CONTRIBUTING.md). Run `npm test` and `npm run lint` before committing.
 - Only the AKP05E on Windows is hardware-verified: do not mark other profiles tested without probe output.

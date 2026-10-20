@@ -2,17 +2,17 @@
   "name": "ajazz-bridge",
   "version": "1.3.0",
   "description": "A background bridge connecting Ajazz and Mirabox macro pads to Bitfocus Companion.",
-  "main": "index.js",
+  "main": "src/index.js",
   "scripts": {
-    "start": "node index.js",
-    "start:supervised": "node supervisor.js",
-    "probe": "node index.js --probe",
+    "start": "node src/index.js",
+    "start:supervised": "node src/supervisor.js",
+    "probe": "node src/index.js --probe",
     "test": "node --import ./test/setup.js --test \"test/*.test.js\"",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "install-startup": "node startup.js install",
-    "uninstall-startup": "node startup.js uninstall",
+    "install-startup": "node src/startup.js install",
+    "uninstall-startup": "node src/startup.js uninstall",
     "package": "node scripts/package.js",
     "udev": "node scripts/udev-rules.js"
   },
@@ -50,5 +50,10 @@
   "bugs": {
     "url": "https://github.com/dvortsis/ajazz-companion-bridge/issues"
   },
-  "homepage": "https://github.com/dvortsis/ajazz-companion-bridge#readme"
+  "homepage": "https://github.com/dvortsis/ajazz-companion-bridge#readme",
+  "prettier": {
+    "singleQuote": true,
+    "printWidth": 120,
+    "trailingComma": "es5"
+  }
 }

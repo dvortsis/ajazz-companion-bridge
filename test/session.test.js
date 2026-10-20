@@ -2,8 +2,8 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { DeckSession } = require('../session');
-const { SUPPORTED_DEVICES } = require('../devices');
+const { DeckSession } = require('../src/session');
+const { SUPPORTED_DEVICES } = require('../src/devices');
 const { waitFor, FakeHid, FakeSatellite, FakeWorker, baseConfig, report } = require('./helpers');
 
 function make(cfg = {}) {

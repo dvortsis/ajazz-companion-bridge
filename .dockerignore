@@ -11,7 +11,8 @@ ca_profile.xml
 *.log.*
 .env
 bridge.lock
-screenshot.png
+assets/screenshot.png
+docs
 *.lnk
 *.vbs
 *.cmd

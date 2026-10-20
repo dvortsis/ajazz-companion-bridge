@@ -24,7 +24,7 @@ You build the same bundle yourself with `npm run package` (on the OS and CPU you
 
 1. Install Node.js 20+. Double-click `setup.cmd`, or run `npm install` and copy `.env.example` to `.env`.
 2. `npm start`. The tray icon shows status and offers **Open log**, **Open folder**, **Reconnect**, **Start at login** and **Quit**.
-3. Start at login: the tray item, or `npm run install-startup` (`npm run uninstall-startup` to remove). This puts a launcher in your Startup folder that runs `launch-bridge.vbs` → `supervisor.js` in a hidden window; the supervisor restarts the bridge if it crashes and stops when you choose **Quit**.
+3. Start at login: the tray item, or `npm run install-startup` (`npm run uninstall-startup` to remove). This puts a launcher in your Startup folder that runs `launch-bridge.vbs` → `src/supervisor.js` in a hidden window; the supervisor restarts the bridge if it crashes and stops when you choose **Quit**.
 4. No Node on the target PC? `npm run package` builds `dist/ajazz-bridge-portable.zip` with Node and the native modules included (build it on the OS you ship to).
 
 ## macOS

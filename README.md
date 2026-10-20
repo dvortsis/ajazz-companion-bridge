@@ -4,7 +4,7 @@
 
 Companion is free software that turns buttons into shortcuts: control lights, start apps, run smart-home scenes, and more. It normally works with Elgato Stream Decks. This small program lets it work with your Ajazz/Mirabox pad too: it shows Companion's button pictures on the pad's screens and tells Companion when you press a key, touch the strip, swipe or turn a dial.
 
-![An Ajazz AKP05E showing Companion buttons](screenshot.png)
+![An Ajazz AKP05E showing Companion buttons](assets/screenshot.png)
 
 ## What you get
 

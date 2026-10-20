@@ -6,7 +6,7 @@
  */
 'use strict';
 
-const { SUPPORTED_DEVICES } = require('../devices');
+const { SUPPORTED_DEVICES } = require('../src/devices');
 
 const hex4 = (n) => n.toString(16).padStart(4, '0');
 

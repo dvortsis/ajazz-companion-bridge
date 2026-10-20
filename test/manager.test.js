@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { DeviceManager, deviceKey } = require('../manager');
+const { DeviceManager, deviceKey } = require('../src/manager');
 const { waitFor, FakeHid, FakeSatellite, FakeWorker, baseConfig, report } = require('./helpers');
 
 const akp = (extra = {}) => ({
@@ -99,7 +99,7 @@ test('a deck that fails to open is retried, not left half-registered', () => {
 });
 
 const net = require('net');
-const { SatelliteClient } = require('../satellite');
+const { SatelliteClient } = require('../src/satellite');
 
 test('two decks through the real satellite client: separate ids, routing, input and removal', async () => {
   const conns = [];

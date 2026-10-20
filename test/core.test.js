@@ -2,12 +2,18 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { parseHardwareEvent, ACTIONS } = require('../parser');
-const { createProtocol } = require('../protocol');
-const { stripIconX } = require('../layout');
-const devices = require('../devices');
-const { parseKv, buildAddDeviceBuffer, buildKeyPressLine, buildKeyRotateLine, keyToRowCol } = require('../satellite');
-const lock = require('../lock');
+const { parseHardwareEvent, ACTIONS } = require('../src/parser');
+const { createProtocol } = require('../src/protocol');
+const { stripIconX } = require('../src/layout');
+const devices = require('../src/devices');
+const {
+  parseKv,
+  buildAddDeviceBuffer,
+  buildKeyPressLine,
+  buildKeyRotateLine,
+  keyToRowCol,
+} = require('../src/satellite');
+const lock = require('../src/lock');
 const os = require('os');
 const path = require('path');
 const fs = require('fs');
@@ -146,7 +152,7 @@ test('single-instance lock', () => {
 });
 
 const { udevRules } = require('../scripts/udev-rules');
-const startupMod = require('../startup');
+const startupMod = require('../src/startup');
 
 test('matchesProfile: strict usage page on Windows, tolerant when Linux/macOS report none', () => {
   const p = devices.SUPPORTED_DEVICES[0];
@@ -208,7 +214,7 @@ test('login item: per-OS location and generated launchd / systemd / vbs content'
   );
 });
 
-const { bundleName, launchers, FILES } = require('../scripts/package');
+const { bundleName, launchers, FILES, DIRS } = require('../scripts/package');
 
 test('release bundles: naming, launchers and file list', () => {
   assert.equal(bundleName('1.2.0', 'win32', 'x64'), 'ajazz-bridge-1.2.0-windows-x64');
@@ -224,16 +230,28 @@ test('release bundles: naming, launchers and file list', () => {
   ]);
   assert.match(win['launch-bridge.vbs'].content, /node\.exe/);
   assert.match(win['launch-bridge.vbs'].content, /supervisor\.js/);
-  assert.match(win['start.cmd'].content, /node\.exe index\.js/);
+  assert.match(win['start.cmd'].content, /node\.exe src\\index\.js/);
 
   const mac = launchers('darwin');
   assert.ok(mac['Start Ajazz Bridge.command'].exec, 'double-clickable in Finder');
   assert.match(mac['start.sh'].content, /^#!\/bin\/sh\n/);
-  assert.match(mac['start.sh'].content, /exec \.\/node index\.js/);
+  assert.match(mac['start.sh'].content, /exec \.\/node src\/index\.js/);
   assert.ok(!('Start Ajazz Bridge.command' in launchers('linux')));
 
-  for (const f of FILES) assert.ok(fs.existsSync(path.join(__dirname, '..', f)), `${f} exists`);
-  for (const f of ['index.js', 'supervisor.js', 'image-worker.js', 'AKP05_icon.png']) assert.ok(FILES.includes(f), f);
+  const root = path.join(__dirname, '..');
+  for (const f of FILES) assert.ok(fs.existsSync(path.join(root, f)), `${f} exists`);
+  for (const d of DIRS) assert.ok(fs.statSync(path.join(root, d)).isDirectory(), `${d}/ exists`);
+  for (const f of [
+    'src/index.js',
+    'src/supervisor.js',
+    'src/image-worker.js',
+    'assets/AKP05_icon.png',
+    'assets/AKP05_icon.ico',
+  ])
+    assert.ok(fs.existsSync(path.join(root, f)), f);
+  assert.match(win['start.cmd'].content, /src\\index\.js/);
+  assert.match(win['launch-bridge.vbs'].content, /src\\supervisor\.js/);
+  assert.match(mac['start.sh'].content, /src\/index\.js/);
 });
 
 test('Unraid Community Applications files are consistent', () => {

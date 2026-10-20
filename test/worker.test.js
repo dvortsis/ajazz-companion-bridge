@@ -3,7 +3,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const sharp = require('sharp');
-const { WorkerClient } = require('../worker-client');
+const { WorkerClient } = require('../src/worker-client');
 
 const geometry = { width: 800, height: 112, iconSize: 112, zones: 4 };
 const stripJob = (deviceId, zone, base64, render) => ({

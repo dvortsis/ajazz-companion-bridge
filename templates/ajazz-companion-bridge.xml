@@ -18,7 +18,7 @@ Only the Ajazz AKP05E is verified on real hardware; other Ajazz/Mirabox pads are
   <Category>Tools:Utilities</Category>
   <WebUI/>
   <TemplateURL>https://raw.githubusercontent.com/dvortsis/ajazz-companion-bridge/main/templates/ajazz-companion-bridge.xml</TemplateURL>
-  <Icon>https://raw.githubusercontent.com/dvortsis/ajazz-companion-bridge/main/AKP05_icon.png</Icon>
+  <Icon>https://raw.githubusercontent.com/dvortsis/ajazz-companion-bridge/main/assets/AKP05_icon.png</Icon>
   <Requires>An Ajazz AKP05E (USB 0300:3004) or another supported Ajazz/Mirabox pad plugged into this server, and Bitfocus Companion 3.0 or newer with the Satellite API enabled (it can run on any machine on your network).</Requires>
   <ExtraSearchTerms>ajazz mirabox akp05 akp05e stream deck companion bitfocus satellite macro pad</ExtraSearchTerms>
   <Config Name="Companion host" Target="COMPANION_HOST" Default="127.0.0.1" Mode="" Description="IP address or hostname of the machine running Bitfocus Companion (use the Unraid IP if Companion is another container on this server)." Type="Variable" Display="always" Required="true" Mask="false">127.0.0.1</Config>

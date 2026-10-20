@@ -3,8 +3,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const net = require('net');
-const { SatelliteClient } = require('../satellite');
-const { SUPPORTED_DEVICES } = require('../devices');
+const { SatelliteClient } = require('../src/satellite');
+const { SUPPORTED_DEVICES } = require('../src/devices');
 const { waitFor } = require('./helpers');
 
 /** Minimal Companion Satellite server: collects lines per connection. */

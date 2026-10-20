@@ -4,7 +4,7 @@
 
 **How to tell which pad you have:** on Windows open Device Manager → Human Interface Devices → your pad → Properties → Details → _Hardware Ids_; it shows `VID_0300&PID_3004` for the AKP05E (VID is the maker's id, PID the product id).
 
-Each product is one entry in `SUPPORTED_DEVICES` in `devices.js`: USB ids, grid size, report size, init sequence and a **layout** (input event → Companion key, Companion key → draw slot, touch-strip geometry). Nothing else in the code names a product.
+Each product is one entry in `SUPPORTED_DEVICES` in `src/devices.js`: USB ids, grid size, report size, init sequence and a **layout** (input event → Companion key, Companion key → draw slot, touch-strip geometry). Nothing else in the code names a product.
 
 | Device                         | USB id (vid:pid)                        | Companion id           | Status               |
 | :----------------------------- | :-------------------------------------- | :--------------------- | :------------------- |
@@ -17,7 +17,7 @@ Each product is one entry in `SUPPORTED_DEVICES` in `devices.js`: USB ids, grid 
 | Mirabox N4 Pro / N4 Pro E      | `5548:1008` / `5548:1021`               | `MIRABOX_N4_PRO…`      | Experimental         |
 | VSDinside N4 / N4 Pro          | `5548:1004` / `5548:1023`               | `VSD_N4`, `VSD_N4_PRO` | Experimental         |
 | Mirabox MSD Pro                | `0b00:1003`                             | `MIRABOX_MSD_PRO`      | Experimental         |
-| CN003, Streonor S10 Pro, SS552 | `1500:3002`, `1500:3007`, `0200:3001`   | see `devices.js`       | Experimental         |
+| CN003, Streonor S10 Pro, SS552 | `1500:3002`, `1500:3007`, `0200:3001`   | see `src/devices.js`   | Experimental         |
 
 **Tested** means a person ran it on the real device against real Companion: registration, every image, and every key, touch zone, swipe and dial. Upstream projects call the `0300:3004` device the "AKP05E"; the bridge keeps the original `AJAZZ_AKP05` id so existing Companion surface configuration keeps working.
 
@@ -26,10 +26,10 @@ Each product is one entry in `SUPPORTED_DEVICES` in `devices.js`: USB ids, grid 
 ## Verifying a device
 
 1. `npm run probe` lists matching USB interfaces and prints every raw input report with the time since the previous one.
-2. Press every key, touch every zone, turn and push every dial, swipe. Compare `action=0x..` values with `ACTIONS` in `parser.js`.
+2. Press every key, touch every zone, turn and push every dial, swipe. Compare `action=0x..` values with `ACTIONS` in `src/parser.js`.
 3. Run the bridge, check the images and every control in Companion.
-4. Set `tested: true` on the profile in `devices.js`, update this table, and open a pull request or issue with the probe output.
+4. Set `tested: true` on the profile in `src/devices.js`, update this table, and open a pull request or issue with the probe output.
 
 ## Adding a device
 
-Add a `profile({...})` entry to `SUPPORTED_DEVICES`: `id` (becomes the Companion `DEVICEID`), `name`, `vid`, `pid`, `rows`, `initSequence`, and optionally `packetPayload`, `usagePage` and a custom `layout` built with `buildLayout()` if its controls differ from the AKP05's. New input codes go in `ACTIONS` in `parser.js`. The Linux udev rules and tests are generated from this list, so run `node scripts/udev-rules.js > deploy/linux/99-ajazz-bridge.rules` afterwards.
+Add a `profile({...})` entry to `SUPPORTED_DEVICES`: `id` (becomes the Companion `DEVICEID`), `name`, `vid`, `pid`, `rows`, `initSequence`, and optionally `packetPayload`, `usagePage` and a custom `layout` built with `buildLayout()` if its controls differ from the AKP05's. New input codes go in `ACTIONS` in `src/parser.js`. The Linux udev rules and tests are generated from this list, so run `node scripts/udev-rules.js > deploy/linux/99-ajazz-bridge.rules` afterwards.

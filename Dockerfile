@@ -9,9 +9,9 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 
-COPY index.js supervisor.js config.js log.js devices.js parser.js protocol.js layout.js satellite.js session.js \
-     manager.js worker-client.js image-worker.js tray.js startup.js lock.js probe.js LICENSE ./
-COPY AKP05_icon.png ./
+COPY src ./src
+COPY assets/AKP05_icon.png ./assets/
+COPY LICENSE ./
 
 # Settings come from environment variables (no .env needed). Logs and the lock live in /config.
 ENV BRIDGE_NO_TRAY=1 \
@@ -21,4 +21,4 @@ ENV BRIDGE_NO_TRAY=1 \
 VOLUME /config
 
 HEALTHCHECK --interval=60s --timeout=5s --start-period=20s CMD node -e "process.exit(require('fs').existsSync('/app/package.json')?0:1)"
-CMD ["node", "index.js"]
+CMD ["node", "src/index.js"]

@@ -13,6 +13,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { execFileSync } = require('child_process');
+const { ROOT } = require('./paths');
 
 const LAUNCHD_LABEL = 'com.ajazz.bridge';
 const SYSTEMD_UNIT = 'ajazz-bridge.service';
@@ -35,7 +36,7 @@ function plistContent({ nodePath, appDir, logDir }) {
   <key>ProgramArguments</key>
   <array>
     <string>${xmlEscape(nodePath)}</string>
-    <string>${xmlEscape(path.join(appDir, 'supervisor.js'))}</string>
+    <string>${xmlEscape(path.join(appDir, 'src', 'supervisor.js'))}</string>
   </array>
   <key>WorkingDirectory</key><string>${xmlEscape(appDir)}</string>
   <key>RunAtLoad</key><true/>
@@ -54,7 +55,7 @@ After=network-online.target
 [Service]
 Type=simple
 WorkingDirectory=${appDir}
-ExecStart=${nodePath} ${path.join(appDir, 'supervisor.js')}
+ExecStart=${nodePath} ${path.join(appDir, 'src', 'supervisor.js')}
 Restart=on-failure
 RestartSec=5
 
@@ -93,7 +94,7 @@ function run(cmd, args) {
 function enable() {
   const f = startupFile();
   if (!f) throw new Error(`Start at login is not supported on ${process.platform}`);
-  const appDir = __dirname;
+  const appDir = ROOT;
   fs.mkdirSync(path.dirname(f), { recursive: true });
   if (process.platform === 'win32') {
     fs.writeFileSync(f, vbsContent(path.join(appDir, 'launch-bridge.vbs')));

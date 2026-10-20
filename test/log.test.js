@@ -17,8 +17,8 @@ fs.writeFileSync(path.join(dir, 'bridge.log'), 'x'.repeat(70 * 1024));
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const config = require('../config');
-const log = require('../log');
+const config = require('../src/config');
+const log = require('../src/log');
 
 test('an oversized existing log is rotated at startup and files stay capped', () => {
   assert.ok(fs.existsSync(path.join(dir, 'bridge.log.1')), 'old 70 KB log became .1');
@@ -43,8 +43,8 @@ test('config falls back on invalid values and reports ignored settings', () => {
 
 test('BRIDGE_KEY_BRIGHTNESS parses valid entries and reports bad ones', () => {
   process.env.BRIDGE_KEY_BRIGHTNESS = '0:60, 5:80,x:1,7:150';
-  delete require.cache[require.resolve('../config')];
-  const cfg = require('../config');
+  delete require.cache[require.resolve('../src/config')];
+  const cfg = require('../src/config');
   assert.deepEqual(
     [...cfg.keyDim],
     [
@@ -61,8 +61,8 @@ test('tray defaults off on headless Linux, stays on elsewhere, and BRIDGE_NO_TRA
     Object.defineProperty(process, 'platform', { value: platform });
     for (const k of ['DISPLAY', 'WAYLAND_DISPLAY', 'BRIDGE_NO_TRAY']) delete process.env[k];
     Object.assign(process.env, env);
-    delete require.cache[require.resolve('../config')];
-    return require('../config').noTray;
+    delete require.cache[require.resolve('../src/config')];
+    return require('../src/config').noTray;
   };
   try {
     assert.equal(load('linux', {}), true, 'no display server');

@@ -4,6 +4,6 @@
 
     **ajazz-companion-bridge** connects a pad plugged into your Unraid server to Companion's Satellite API: button pictures on the pad's screens, key presses, the touch strip, swipes and dials. Documentation, source and issue tracker: https://github.com/dvortsis/ajazz-companion-bridge
   </Profile>
-  <Icon>https://raw.githubusercontent.com/dvortsis/ajazz-companion-bridge/main/AKP05_icon.png</Icon>
+  <Icon>https://raw.githubusercontent.com/dvortsis/ajazz-companion-bridge/main/assets/AKP05_icon.png</Icon>
   <WebPage>https://github.com/dvortsis/ajazz-companion-bridge</WebPage>
 </CommunityApplications>

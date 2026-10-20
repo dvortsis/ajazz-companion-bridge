@@ -14,34 +14,8 @@ const { execFileSync } = require('child_process');
 
 const root = path.join(__dirname, '..');
 
-const FILES = [
-  'index.js',
-  'supervisor.js',
-  'config.js',
-  'log.js',
-  'devices.js',
-  'parser.js',
-  'protocol.js',
-  'layout.js',
-  'satellite.js',
-  'session.js',
-  'manager.js',
-  'worker-client.js',
-  'image-worker.js',
-  'tray.js',
-  'startup.js',
-  'lock.js',
-  'probe.js',
-  'package.json',
-  'package-lock.json',
-  '.env.example',
-  'LICENSE',
-  'CHANGELOG.md',
-  'readme.md',
-  'AKP05_icon.ico',
-  'AKP05_icon.png',
-];
-const DIRS = ['docs'];
+const FILES = ['package.json', 'package-lock.json', '.env.example', 'LICENSE', 'CHANGELOG.md', 'README.md'];
+const DIRS = ['src', 'assets', 'docs'];
 
 const PLATFORM_NAMES = { win32: 'windows', darwin: 'macos', linux: 'linux' };
 
@@ -60,32 +34,32 @@ function launchers(platform = process.platform) {
           'Set WshShell = CreateObject("WScript.Shell")',
           'dir = CreateObject("Scripting.FileSystemObject").GetParentFolderName(WScript.ScriptFullName)',
           'WshShell.CurrentDirectory = dir',
-          'WshShell.Run """" & dir & "\\node.exe"" supervisor.js", 0, False',
+          'WshShell.Run """" & dir & "\\node.exe"" src\\supervisor.js", 0, False',
           '',
         ].join('\r\n'),
       },
       'start.cmd': {
         content:
-          '@echo off\r\ncd /d "%~dp0"\r\nif not exist .env copy .env.example .env >nul\r\nnode.exe index.js\r\npause\r\n',
+          '@echo off\r\ncd /d "%~dp0"\r\nif not exist .env copy .env.example .env >nul\r\nnode.exe src\\index.js\r\npause\r\n',
       },
       'install-startup.cmd': {
-        content: '@echo off\r\ncd /d "%~dp0"\r\nnode.exe startup.js install\r\npause\r\n',
+        content: '@echo off\r\ncd /d "%~dp0"\r\nnode.exe src\\startup.js install\r\npause\r\n',
       },
       'uninstall-startup.cmd': {
-        content: '@echo off\r\ncd /d "%~dp0"\r\nnode.exe startup.js uninstall\r\npause\r\n',
+        content: '@echo off\r\ncd /d "%~dp0"\r\nnode.exe src\\startup.js uninstall\r\npause\r\n',
       },
     };
   }
   const start =
-    '#!/bin/sh\ncd "$(dirname "$0")" || exit 1\n[ -f .env ] || cp .env.example .env\nexec ./node index.js\n';
+    '#!/bin/sh\ncd "$(dirname "$0")" || exit 1\n[ -f .env ] || cp .env.example .env\nexec ./node src/index.js\n';
   const files = {
     'start.sh': { content: start, exec: true },
     'install-startup.sh': {
-      content: '#!/bin/sh\ncd "$(dirname "$0")" || exit 1\n./node startup.js install\n',
+      content: '#!/bin/sh\ncd "$(dirname "$0")" || exit 1\n./node src/startup.js install\n',
       exec: true,
     },
     'uninstall-startup.sh': {
-      content: '#!/bin/sh\ncd "$(dirname "$0")" || exit 1\n./node startup.js uninstall\n',
+      content: '#!/bin/sh\ncd "$(dirname "$0")" || exit 1\n./node src/startup.js uninstall\n',
       exec: true,
     },
   };
@@ -134,6 +108,6 @@ function build() {
   return archive;
 }
 
-module.exports = { bundleName, launchers, FILES };
+module.exports = { bundleName, launchers, FILES, DIRS };
 
 if (require.main === module) build();
