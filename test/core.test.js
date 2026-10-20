@@ -235,3 +235,21 @@ test('release bundles: naming, launchers and file list', () => {
   for (const f of FILES) assert.ok(fs.existsSync(path.join(__dirname, '..', f)), `${f} exists`);
   for (const f of ['index.js', 'supervisor.js', 'image-worker.js', 'AKP05_icon.png']) assert.ok(FILES.includes(f), f);
 });
+
+test('Unraid Community Applications files are consistent', () => {
+  const root = path.join(__dirname, '..');
+  const tpl = fs.readFileSync(path.join(root, 'templates', 'ajazz-companion-bridge.xml'), 'utf8');
+  assert.match(tpl, /<Container version="2">/);
+  assert.match(tpl, /<Repository>ghcr\.io\/dvortsis\/ajazz-companion-bridge:latest<\/Repository>/);
+  assert.match(tpl, /<TemplateURL>[^<]*\/templates\/ajazz-companion-bridge\.xml<\/TemplateURL>/);
+  assert.match(tpl, /<Privileged>false<\/Privileged>/);
+  assert.match(tpl, /Type="Device"/);
+  for (const v of ['COMPANION_HOST', 'COMPANION_PORT', 'LOG_LEVEL', 'HID_WRITE_DELAY_MS'])
+    assert.ok(tpl.includes(`Target="${v}"`), v);
+  const icon = /<Icon>[^<]*\/main\/([^<]+)<\/Icon>/.exec(tpl)[1];
+  assert.ok(fs.existsSync(path.join(root, icon)), `icon ${icon} exists in the repo`);
+  const profile = fs.readFileSync(path.join(root, 'ca_profile.xml'), 'utf8');
+  assert.match(profile, /<Profile>\s*\S/);
+  assert.ok(fs.existsSync(path.join(root, 'LICENSE')));
+  assert.ok(!fs.existsSync(path.join(root, 'deploy', 'unraid')), 'old template location removed');
+});

@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+
+- Community Applications (Unraid app store) submission files: `ca_profile.xml` and `templates/ajazz-companion-bridge.xml`. The template now runs without `--privileged` by default and maps the pad through a "USB HID device" field.
+
 ### Changed
 
 - Docker and Unraid instructions now use the published `ghcr.io/dvortsis/ajazz-companion-bridge` image (public, amd64 and arm64) instead of building locally.

@@ -69,10 +69,11 @@ or `docker compose up -d` with the included `docker-compose.yml`. The deck appea
 
 ## Unraid
 
-The pad must be plugged into the Unraid server for this route. If it is plugged into your PC, run the bridge on the PC instead (step 5).
+The pad must be plugged into the Unraid server for this route. If it is plugged into your PC, run the bridge on the PC instead (step 6).
 
-1. Nothing to build: the template pulls the published image `ghcr.io/dvortsis/ajazz-companion-bridge:latest`. (To use a copy you built yourself, run `docker build -t ajazz-companion-bridge /path/to/ajazz-bridge` and set **Repository** to that name.)
-2. Copy `deploy/unraid/ajazz-bridge.xml` to `/boot/config/plugins/dockerMan/templates-user/`, then **Docker → Add Container → ajazz-companion-bridge**. Set **Repository** only if you built your own image.
-3. Set **Companion host** to the Unraid IP if Companion is another container, or to the IP of the machine that runs Companion.
-4. The template runs with `--privileged` so the container can open the USB HID device. To avoid that, turn Privileged off and add `--device=/dev/hidrawN` under Extra Parameters.
-5. If the deck is plugged into another PC rather than Unraid, run the bridge on that PC and point it at Companion on Unraid.
+1. **Install the template.** Once the app is listed in Community Applications, open **Apps** and search for "ajazz". Until then (or if you prefer), copy `templates/ajazz-companion-bridge.xml` from this repository to `/boot/config/plugins/dockerMan/templates-user/` on the server, then choose **Docker → Add Container → ajazz-companion-bridge**.
+2. **Nothing to build:** the template pulls the published image `ghcr.io/dvortsis/ajazz-companion-bridge:latest`. (To use a copy you built yourself, run `docker build -t ajazz-companion-bridge /path/to/ajazz-bridge` and set **Repository** to that name.)
+3. Set **Companion host** to the IP of the machine that runs Companion (the Unraid IP if Companion is another container on this server).
+4. Set **USB HID device** to the pad's node. With the pad plugged in, open the Unraid terminal and run `ls -l /dev/hidraw*`, then unplug the pad and run it again: the entry that disappears is the pad. The number can change after a reboot or replug, so check it again if the pad stops responding.
+5. Start the container and open its log. You should see `[HID] Secured …` and `ADD-DEVICE OK`. If it says `No supported devices found`, edit the container, switch **Privileged** on (Advanced View) and try again: the template runs without it by default, but this has not yet been tried on a real Unraid server.
+6. If the deck is plugged into another PC rather than Unraid, run the bridge on that PC and point it at Companion on Unraid.

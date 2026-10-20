@@ -3,6 +3,8 @@ dist
 test
 scripts
 deploy
+templates
+ca_profile.xml
 .git
 .github
 *.log
