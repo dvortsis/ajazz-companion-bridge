@@ -2,6 +2,13 @@
 
 ## 1.1.0
 
+### Verified on real hardware (Ajazz AKP05E + Companion 4.x, 2026-10-20)
+
+- Registration (ADD-DEVICE OK), all 14 key and strip images drawn, strip icons aligned over the dials.
+- Every input reached Companion and was acknowledged: top/middle keys (press + release), the four touch zones, swipe left/right, dial 1 and 4 rotation both directions, dial 2 push.
+- Dial pushes and touch/swipe send a single report with no release, so the synthetic release is required.
+- Tray menu appears and Open log / Reconnect respond. No errors, warnings or reconnects during the session.
+
 ### Fixed
 
 - `HID_WRITE_DELAY_MS` from `.env` is now honoured (the code read a different name).
