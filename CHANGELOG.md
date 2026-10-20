@@ -6,6 +6,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Changed
 
+- Documentation rewritten for non-technical users: a plain-language readme, a step-by-step getting-started guide (`docs/GETTING-STARTED.md`) with a glossary, a troubleshooting guide (`docs/TROUBLESHOOTING.md`), friendlier platform, configuration and device pages, and clearer `.env.example` comments.
 - Touch strip icons now sit 8 px in from the strip edges by default (`AKP05_STRIP_EDGE_PADDING=8`) so the outer icons line up with the outer dials; set it to 0 for the previous flush-to-edge layout.
 
 ## [1.2.0] - 2026-10-20

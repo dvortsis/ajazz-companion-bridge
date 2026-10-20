@@ -1,5 +1,9 @@
 # Supported devices
 
+**In plain words:** the **Ajazz AKP05E** is the pad this bridge was built and tested on, so it is the safe choice. The other pads in the list are _experimental_: the bridge recognises them and tries the same approach, but nobody has confirmed they work. If you own one, you can help by running the `npm run probe` check described below and sharing the result. The table and sections below are the technical details.
+
+**How to tell which pad you have:** on Windows open Device Manager → Human Interface Devices → your pad → Properties → Details → _Hardware Ids_; it shows `VID_0300&PID_3004` for the AKP05E (VID is the maker's id, PID the product id).
+
 Each product is one entry in `SUPPORTED_DEVICES` in `devices.js`: USB ids, grid size, report size, init sequence and a **layout** (input event → Companion key, Companion key → draw slot, touch-strip geometry). Nothing else in the code names a product.
 
 | Device                         | USB id (vid:pid)                        | Companion id           | Status               |

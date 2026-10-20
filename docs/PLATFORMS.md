@@ -1,5 +1,9 @@
 # Platform setup
 
+> **New here?** Windows users should follow [GETTING-STARTED.md](GETTING-STARTED.md), which explains every click. This page covers the other systems and the more technical options.
+>
+> Some steps below use a **terminal**: on a Mac open _Terminal_ (Applications → Utilities); on Linux press `Ctrl+Alt+T` or search for _Terminal_. Type each command and press Enter. Commands starting with `sudo` ask for your computer password (nothing shows as you type; that is normal).
+
 The bridge must run on the machine the deck is plugged into. Companion can be anywhere on the network: set `COMPANION_HOST` (and `COMPANION_PORT`) to reach its Satellite API.
 
 **Verification status:** only Windows with an AKP05E has been run against a real deck. Linux (Debian, Node 22) passes install, lint and the full test suite; the Docker image builds, starts, connects to a Satellite server and runs on a read-only filesystem; the generated systemd unit passes `systemd-analyze verify`; the launchd plist is well-formed. A real deck on macOS, Linux or Unraid and USB passthrough into a container have not been tried.
@@ -13,11 +17,15 @@ The bridge must run on the machine the deck is plugged into. Companion can be an
 
 ## macOS
 
+Step 1 uses [Homebrew](https://brew.sh). If you don't have it, install Node.js from [nodejs.org](https://nodejs.org/) instead and skip that command.
+
 1. `brew install node`, then `npm install` and copy `.env.example` to `.env`.
 2. `npm start`. A menu-bar icon appears (`BRIDGE_NO_TRAY=1` hides it). The first time the deck is read, macOS may ask to allow **Input Monitoring** for your terminal or Node.
 3. Start at login: `npm run install-startup` writes `~/Library/LaunchAgents/com.ajazz.bridge.plist` and loads it; `npm run uninstall-startup` removes it. Output goes to `launchd.out.log` / `launchd.err.log` in the bridge folder.
 
 ## Linux (desktop or server)
+
+On Linux a normal user is not allowed to talk to USB devices until you add a permission rule (step 2). If you skip it the bridge reports a _permission denied_ error.
 
 1. Install Node.js 20+. If no prebuilt USB module matches your system: `sudo apt install libudev-dev libusb-1.0-0-dev build-essential`. Then `npm install`.
 2. Allow your user to open the deck:
@@ -31,6 +39,8 @@ The bridge must run on the machine the deck is plugged into. Companion can be an
 
 ## Docker
 
+Docker packages the bridge so you don't install Node yourself. It suits servers and home labs; on a desktop PC the normal install above is easier.
+
 The image is headless and configured with environment variables; logs and the lock go to `/config`.
 
 ```text
@@ -43,6 +53,8 @@ docker run -d --name ajazz-bridge --restart unless-stopped --network host \
 or `docker compose up -d` with the included `docker-compose.yml`. The deck appears as `/dev/hidrawN` (`ls -l /dev/hidraw*`); pass that device with `--device`, or use `--privileged` if the number changes between boots. Install the udev rules on the Docker host too. `docker logs ajazz-bridge` should show `[HID] Secured …` and `ADD-DEVICE OK`. Tagging a release (`v*`) on GitHub publishes `ghcr.io/<owner>/ajazz-companion-bridge` for amd64 and arm64 with `.github/workflows/docker.yml`.
 
 ## Unraid
+
+The pad must be plugged into the Unraid server for this route. If it is plugged into your PC, run the bridge on the PC instead (step 5).
 
 1. Build the image on the server (`docker build -t ajazz-companion-bridge /path/to/ajazz-bridge`), or use the `ghcr.io` image once published.
 2. Copy `deploy/unraid/ajazz-bridge.xml` to `/boot/config/plugins/dockerMan/templates-user/`, then **Docker → Add Container → ajazz-companion-bridge**. Set **Repository** to your image if you built it locally.

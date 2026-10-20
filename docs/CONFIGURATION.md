@@ -1,5 +1,16 @@
 # Configuration
 
+**You probably don't need this page.** The defaults work for most people. The three settings worth knowing are `COMPANION_HOST` (if Companion is on another computer), `HID_WRITE_DELAY_MS` (if pictures look torn) and `LOG_LEVEL` (when asking for help).
+
+**How to change a setting:** open the file named `.env` in the bridge folder with Notepad (or any text editor), remove the `#` at the start of the line, change the value, save the file, then quit and restart the bridge. If there is no `.env` yet, copy `.env.example` to `.env` first. Example:
+
+```text
+COMPANION_HOST=192.168.1.50
+HID_WRITE_DELAY_MS=2
+```
+
+The rest of this page is the complete reference for advanced users.
+
 Settings come from `.env` in the bridge folder (copy `.env.example`) or from real environment variables, which win over `.env`. Every setting is optional. Invalid values fall back to the default and unknown `AKP05_*`, `COMPANION_*`, `HID_*`, `SATELLITE_*`, `BRIDGE_*` and `LOG_*` names are reported as `[CONFIG]` warnings at startup. Parsing lives in `config.js`.
 
 ## Companion link
