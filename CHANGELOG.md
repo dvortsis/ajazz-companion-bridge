@@ -4,6 +4,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-10-20
+
 ### Added
 
 - Ready-to-run release bundles for Windows (`.zip`), macOS arm64 and x64 and Linux x64 (`.tar.gz`), built and attached to each GitHub release by `.github/workflows/release.yml`. `npm run package` builds the bundle for the current OS; bundles include Node.js, the docs and launcher scripts.
@@ -69,7 +71,8 @@ Run on an Ajazz AKP05E with Companion 4.x on Windows: registration, all key and 
 
 - Initial release: Ajazz AKP05 bridge for Bitfocus Companion with touch strip compositing, rotary dials, swipes, system-tray icon and Windows auto-start.
 
-[Unreleased]: https://github.com/dvortsis/ajazz-companion-bridge/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/dvortsis/ajazz-companion-bridge/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/dvortsis/ajazz-companion-bridge/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/dvortsis/ajazz-companion-bridge/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/dvortsis/ajazz-companion-bridge/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/dvortsis/ajazz-companion-bridge/releases/tag/v1.0.0
