@@ -29,7 +29,7 @@
 - Tray status, Open log/folder, Reconnect, Start with Windows; single-instance lock; supervisor with auto-restart.
 - `npm run probe`, `install-startup`, tests, ESLint/Prettier, CI.
 - Opt-in press-and-rotate (`BRIDGE_SHIFT_ROTATE`) and dial long-press (`BRIDGE_DIAL_PUSH_HOLD`), idle dim level, `setup.cmd` installer, Ubuntu CI.
-- Per-key software dimming (`BRIDGE_KEY_BRIGHTNESS`), opt-in touch hold (`BRIDGE_TOUCH_HOLD`), probe prints time between reports, `npm run package` portable bundle (no Node install needed).
+- Per-key software dimming (`BRIDGE_KEY_BRIGHTNESS`), opt-in touch hold (`BRIDGE_TOUCH_HOLD`; probed on real AKP05E: one report per touch, so no true hold on that firmware), probe prints time between reports, `npm run package` portable bundle (no Node install needed).
 - Tray/product name now reads "Ajazz AKP05E" (DEVICEID `AJAZZ_AKP05` unchanged).
 - Optional idle screen-off, encoder acceleration, swipe swap, configurable auto-release.
 - MIT `LICENSE`, `.env.example` documenting every setting.
