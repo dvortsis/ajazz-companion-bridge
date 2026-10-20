@@ -5,7 +5,9 @@
  * latest icon per zone (per device) and composites them onto one black strip canvas, then encodes the whole
  * strip as a single JPEG. Other keys are a single square JPEG each.
  *
- * Job:    { id, deviceId, bitmapSize, base64, slot?, strip?: {zone, geometry, padding, quality}, render?: bool }
+ * Job:    { id, deviceId, base64, slot, dim?, strip?: {zone, geometry, padding, quality}, render?: bool }
+ *         or { id, deviceId, reset: true } to forget a device's strip icons.
+ *         `dim` is a 0-100 brightness percent; `render: false` stores a strip icon without producing an image.
  * Reply:  { id, ok, jpeg?, skipped?, error? }
  */
 'use strict';

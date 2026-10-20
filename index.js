@@ -4,8 +4,10 @@
  * Outbound: Companion says which key image to show; we prepare it and send it over USB.
  * Inbound:  The deck reports a press / dial turn; we turn that into Companion key presses and rotations.
  *
- * Settings: `.env` (see .env.example). Modules: config, log, devices, parser, protocol, satellite, session,
- * manager, worker-client + image-worker, tray, startup, lock, probe.
+ * Settings: `.env` or environment variables (see .env.example and docs/CONFIGURATION.md). Wiring only: the work
+ * happens in config, log, devices, parser, protocol, layout, satellite, session, manager, worker-client +
+ * image-worker, tray, startup and lock (see docs/ARCHITECTURE.md). `supervisor.js` restarts this process on a crash;
+ * `node index.js --probe` dumps raw device reports instead of running the bridge.
  */
 'use strict';
 

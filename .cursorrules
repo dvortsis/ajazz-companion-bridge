@@ -1,8 +1,10 @@
-Target: Ajazz AKP05 Bridge to Bitfocus Companion 4.2.6
-Context:
-- Satellite 2.0 Protocol: Requires DEVICEID=... and PRODUCT_NAME=...
-- Handshake sequence: Wait for 'BEGIN', then send 'ADD-DEVICE'.
-- Heartbeat: Must respond to 'PING' with 'PONG'.
-- Performance: sharp processing MUST be off-thread (image-worker.js).
-- HID: Report ID 0x00 followed by 1024-byte payload.
-- Success Metric: Terminal must show 'ADD-DEVICE OK' and 'BRIGHTNESS' without 'Lost. Reconnecting'.
+Project: Ajazz / Mirabox deck bridge for Bitfocus Companion (Satellite API). Docs: docs/ARCHITECTURE.md.
+Rules:
+- Satellite protocol: wait for BEGIN, then ADD-DEVICE DEVICEID=.. PRODUCT_NAME=.. KEYS_TOTAL=.. KEYS_PER_ROW=.. BITMAPS=..;
+  answer PING with PONG; send KEY-PRESS / KEY-ROTATE; REMOVE-DEVICE when a deck goes away.
+- Image work (sharp) stays off the main thread in image-worker.js.
+- USB: report id 0x00 then up to 1024 payload bytes per report; commands in protocol.js.
+- Product-specific data (ids, init bytes, layouts) lives only in devices.js profiles.
+- Settings are read only in config.js; every new setting needs .env.example, docs/CONFIGURATION.md and a test.
+- Commits: Conventional Commits (see CONTRIBUTING.md). Run `npm test` and `npm run lint` before committing.
+- Only the AKP05E on Windows is hardware-verified: do not mark other profiles tested without probe output.

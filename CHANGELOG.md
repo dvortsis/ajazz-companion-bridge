@@ -1,54 +1,63 @@
 # Changelog
 
-## 1.1.0
+All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
-### Ported to macOS, Linux and Unraid
-
-- Start at login on every OS: Windows Startup launcher, macOS launchd agent, Linux systemd user service (`npm run install-startup`).
-- Linux: generated udev rules (`npm run udev`, committed in `deploy/linux`); USB matching tolerates platforms that report no HID usage page.
-- Tray: PNG icon for macOS/Linux, off by default on headless Linux; single-instance lock no longer fatal on read-only installs.
-- Docker image, compose file, Unraid Community Apps template and a GHCR publish workflow (`deploy/`, `Dockerfile`).
-
-### Verified on real hardware (Ajazz AKP05E + Companion 4.x, 2026-10-20)
-
-- Registration (ADD-DEVICE OK), all 14 key and strip images drawn, strip icons aligned over the dials.
-- Every input reached Companion and was acknowledged: top/middle keys (press + release), the four touch zones, swipe left/right, dial 1 and 4 rotation both directions, dial 2 push.
-- Dial pushes and touch/swipe send a single report with no release, so the synthetic release is required.
-- Linux (Debian, Node 22, Docker): `npm ci` with native `node-hid`/`sharp`, lint, format check and all 50 tests pass. No USB deck was attached, so Linux hardware use is untested.
-- Tray menu appears and Open log / Reconnect respond. No errors, warnings or reconnects during the session.
-
-### Fixed
-
-- `HID_WRITE_DELAY_MS` from `.env` is now honoured (the code read a different name).
-- A refused Companion connection no longer crashes the bridge.
-- Unplug/replug fully recovers: the surface is removed from Companion and re-registered, the old handle is closed, and any USB error (not just "could not read") is detected.
-- Keys can no longer get stuck down when the socket or USB link drops.
-- Dial pushes no longer click twice if the device also sends a release packet.
-- The image queue keeps the newest frame per key instead of dropping new frames when full; unchanged frames are skipped.
-- Strip JPEG quality honours `AKP05_STRIP_JPEG_QUALITY` / `AKP05_JPEG_QUALITY`.
-- A crashed image worker retries the job instead of losing it.
-
-### Changed
-
-- Touch strip icons: outer icons flush with the edges to line up with the dials; inner icons evenly spaced.
-- The four strip bitmaps are composited and uploaded once instead of four times.
-- Rotating `bridge.log` with log levels; per-frame chatter is `debug` only.
-- Companion link: 1 s ping, dead-link detection, exponential reconnect backoff.
-- 72 px sources are upscaled with Lanczos.
-- Code split into modules; device behaviour lives in `devices.js` profiles; table-driven parser; `.env` validation.
+## [1.2.0] - 2026-10-20
 
 ### Added
 
-- Multiple decks at once; USB hot-plug scanning.
-- Experimental profiles for further devices from the reference projects (marked `tested: false`).
-- Tray status, Open log/folder, Reconnect, Start with Windows; single-instance lock; supervisor with auto-restart.
-- `npm run probe`, `install-startup`, tests, ESLint/Prettier, CI.
-- Opt-in press-and-rotate (`BRIDGE_SHIFT_ROTATE`) and dial long-press (`BRIDGE_DIAL_PUSH_HOLD`), idle dim level, `setup.cmd` installer, Ubuntu CI.
-- Per-key software dimming (`BRIDGE_KEY_BRIGHTNESS`), opt-in touch hold (`BRIDGE_TOUCH_HOLD`; probed on real AKP05E: one report per touch, so no true hold on that firmware), probe prints time between reports, `npm run package` portable bundle (no Node install needed).
-- Tray/product name now reads "Ajazz AKP05E" (DEVICEID `AJAZZ_AKP05` unchanged).
-- Optional idle screen-off, encoder acceleration, swipe swap, configurable auto-release.
-- MIT `LICENSE`, `.env.example` documenting every setting.
+- macOS, Linux and Docker/Unraid support: start at login on every OS (Windows Startup launcher, macOS launchd agent, Linux systemd user service via `npm run install-startup`), generated Linux udev rules (`scripts/udev-rules.js`, committed in `deploy/linux/`), a Docker image, `docker-compose.yml`, an Unraid template (`deploy/unraid/`) and a workflow that publishes the image to `ghcr.io` on `v*` tags.
+- Documentation set: platform guide, configuration reference, device guide, architecture overview and contributing guide in `docs/` and `CONTRIBUTING.md`.
+
+### Changed
+
+- USB matching accepts platforms that report no HID usage page (Linux, macOS); Windows stays strict.
+- The tray icon is off by default on headless Linux and in containers; macOS and Linux use a PNG icon. The tray toggle is now "Start at login".
+- The single-instance lock is no longer fatal on a read-only install directory.
+- The readme is reorganised around a quick start; settings moved to `docs/CONFIGURATION.md`.
+
+## [1.1.0] - 2026-10-20
+
+### Added
+
+- Multiple decks at once, USB hot-plug scanning and experimental profiles for further devices from the reference projects (`tested: false`).
+- Tray status line with Open log, Open folder, Reconnect and Start with Windows; single-instance lock; `supervisor.js` that restarts the bridge after a crash.
+- `npm run probe` (raw report dump with timing), `install-startup`, `package` (portable Windows bundle), `setup.cmd`, tests, ESLint/Prettier and CI.
+- Options: per-key dimming (`BRIDGE_KEY_BRIGHTNESS`), idle dim/off, dial acceleration, press-and-rotate (`BRIDGE_SHIFT_ROTATE`), dial long-press (`BRIDGE_DIAL_PUSH_HOLD`), swipe swap, configurable auto-release and touch hold.
+- MIT `LICENSE` and an `.env.example` that documents every setting.
+
+### Changed
+
+- Touch strip icons are edge-aligned so they sit over the dials, and the four strip images are composited and uploaded once instead of four times.
+- The strip canvas is cached and 72 px images are upscaled with Lanczos.
+- `bridge.log` rotates at 5 MB with log levels; per-frame output is `debug` only.
+- The Companion link pings every second, detects a dead link and reconnects with exponential backoff.
+- The code is split into modules, device behaviour lives in `devices.js` profiles, the parser is table driven and `.env` is validated at startup.
+- The product name shown in Companion is "Ajazz AKP05E" (the `AJAZZ_AKP05` id is unchanged).
+
+### Fixed
+
+- `HID_WRITE_DELAY_MS` from `.env` is honoured (the code read a different name).
+- A refused Companion connection no longer crashes the bridge.
+- Unplugging and replugging recovers fully: the surface is removed and re-registered, the old handle is closed and any USB error is detected.
+- Keys no longer stick down when the socket or USB link drops, and dial pushes no longer click twice if a release report arrives.
+- The image queue keeps the newest frame per key, unchanged frames are skipped and a crashed image worker retries its job.
+- The strip honours the configured JPEG quality.
 
 ### Removed
 
-- Unused `axios` dependency, dead mapping helpers, and the non-functional `AKP05_TOUCH_KEYS` setting.
+- The unused `axios` dependency, dead mapping helpers and the non-functional `AKP05_TOUCH_KEYS` setting.
+
+### Verified
+
+Run on an Ajazz AKP05E with Companion 4.x on Windows: registration, all key and strip images, the strip icons aligned over the dials, key presses and releases, the four touch zones, swipes, dial turns in both directions and a dial push all reached Companion and were acknowledged, with no errors or reconnects. Touch zones, swipes and dial pushes send one report and no release, so the synthetic release is required, and a touch cannot be detected as a hold. The tray menu appears and Open log and Reconnect respond. On Linux (Debian, Node 22) install, lint and all tests pass.
+
+## [1.0.0] - 2026-04-01
+
+### Added
+
+- Initial release: Ajazz AKP05 bridge for Bitfocus Companion with touch strip compositing, rotary dials, swipes, system-tray icon and Windows auto-start.
+
+[1.2.0]: https://github.com/dvortsis/ajazz-companion-bridge/compare/v1.1.0...v1.2.0
+[1.1.0]: https://github.com/dvortsis/ajazz-companion-bridge/compare/v1.0.0...v1.1.0
+[1.0.0]: https://github.com/dvortsis/ajazz-companion-bridge/releases/tag/v1.0.0

@@ -1,196 +1,103 @@
 # Ajazz / Mirabox Companion Bridge
 
-This application connects Ajazz and Mirabox LCD macro pads to [Bitfocus Companion](https://bitfocus.io/companion), allowing them to function as native control surfaces (similar to an Elgato Stream Deck).
+Use an Ajazz or Mirabox LCD macro pad as a native control surface for [Bitfocus Companion](https://bitfocus.io/companion), like an Elgato Stream Deck. The bridge reads the deck over USB, talks to Companion through its Satellite API, draws Companion's button images on the deck, and sends key presses, touch-strip taps, swipes and dial turns back.
 
-It runs quietly in your Windows System Tray and translates the USB signals from your device into network commands that Companion understands, unlocking features like the ultra-wide touch strip and rotary dials.
-
----
+- Main LCD keys, the ultra-wide **touch strip** (four zones composited into one image), **rotary dials** (rotate and push) and **swipes**.
+- Runs on **Windows, macOS, Linux and Docker/Unraid**, with a tray / menu-bar icon where a desktop exists.
+- Survives unplugging, Companion restarts and crashes: automatic reconnect, re-registration and supervisor restart.
+- Several decks at once, USB hot-plug, rotating logs, and a `--probe` mode for verifying new devices.
 
 ![Ajazz Bridge Screenshot](screenshot.png)
 
----
+## Supported devices
 
-## Supported Devices
+| Device                                                                   | USB id      | Status                                                                 |
+| :----------------------------------------------------------------------- | :---------- | :--------------------------------------------------------------------- |
+| **Ajazz AKP05E** (5x4 grid, registered with Companion as `AJAZZ_AKP05`)  | `0300:3004` | **Tested** on hardware: keys, touch strip, dials, swipes               |
+| Ajazz AKP153 / 153E / 153R, AKP05E Pro, Mirabox N4 / N4E                 | see below   | Experimental, untested                                                 |
+| AKP05 (3006), AKP05CN Pro, Mirabox N4 Pro, VSDinside N4, MSD Pro, others | see below   | Experimental: profiles from the reference projects, assumed AKP05-like |
 
-| Device                                                                                                            | USB id                        | Status                                                                                                                                |
-| :---------------------------------------------------------------------------------------------------------------- | :---------------------------- | :------------------------------------------------------------------------------------------------------------------------------------ |
-| **Ajazz AKP05E** (5x4 grid, registered as `AJAZZ_AKP05`)                                                          | `0300:3004`                   | **Tested.** Touch strip, rotary dials, swipes.                                                                                        |
-| Ajazz AKP153 / 153E / 153R                                                                                        | `0300:1530` / `1010` / `1020` | Experimental, untested                                                                                                                |
-| Ajazz AKP05E Pro                                                                                                  | `0300:3013`                   | Experimental, untested                                                                                                                |
-| Mirabox N4 / N4E                                                                                                  | `6602:1001` / `6603:1007`     | Experimental, untested                                                                                                                |
-| AKP05 (3006), AKP05CN Pro, Mirabox N4 Pro / Pro E, VSDinside N4 / N4 Pro, MSD Pro, CN003, Streonor S10 Pro, SS552 | see `devices.js`              | Experimental: profiles taken from [ambiso/opendeck-akp05](https://github.com/ambiso/opendeck-akp05), assumed to behave like the AKP05 |
+Only the AKP05E on Windows has been tried on real hardware. The full list, how profiles work and how to verify a device are in [docs/DEVICES.md](docs/DEVICES.md).
 
-Experimental devices log a warning when opened. If you own one, run `npm run probe`, press every control, and open an issue with the output so the profile can be verified. More than one deck can be connected at once; the first of each model keeps its plain id (for example `AJAZZ_AKP05`), further ones get the serial number appended.
+## Quick start
 
----
+1. **Companion:** open the web UI (usually `http://127.0.0.1:8000`) → **Settings** → **Satellite API** → enable it, port `16622`. Under **Settings** → **Surfaces**, switch **off** "Enable connected Mirabox Stream Dock devices" so Companion does not grab the deck itself.
+2. **Install Node.js 20+** from [nodejs.org](https://nodejs.org/).
+3. **Install the bridge** (the folder this readme is in):
+   - Windows: double-click `setup.cmd` (installs dependencies, creates `.env`, offers start-at-login).
+   - Anywhere: `npm install`, then copy `.env.example` to `.env`.
+4. **Run:** `npm start` (or `node index.js`). The tray icon shows the deck and Companion connection status; the deck should light up and show your Companion page.
 
-## Part 1: Prerequisites
+If Companion runs on another machine, set `COMPANION_HOST` in `.env`. The bridge always runs on the machine the deck is plugged into.
 
-1.  **Node.js** 20 or newer (LTS) from [nodejs.org](https://nodejs.org/).
-2.  **Bitfocus Companion** 3.0 or higher.
+## Companion layout (AKP05E)
 
-## Part 2: Bitfocus Companion Setup
+Companion sees the deck as a **5 × 4** grid (20 keys):
 
-1.  Open the Companion web interface (usually `http://127.0.0.1:8000`).
-2.  **Settings** > **Satellite API** > set **Enable Satellite API** to ON, port `16622`, **Save**.
+| Physical feature                 | Companion row | Buttons (row/col)                  |
+| :------------------------------- | :------------ | :--------------------------------- |
+| Top row of keys                  | 0             | `0/0` … `0/4`                      |
+| Middle row of keys               | 1             | `1/0` … `1/4`                      |
+| Touch strip (four zones)         | 2             | `2/0`, `2/1`, `2/2`, `2/3`         |
+| Swipe left                       | 2             | `2/4` _(press)_                    |
+| Rotary dials 1-4 (left to right) | 3             | `3/0` … `3/3` _(push, rotate L/R)_ |
+| Swipe right                      | 3             | `3/4` _(press)_                    |
 
-**CRITICAL STEP**: with Companion 3.0 or newer, disable the native drivers or Windows will block this bridge from the hardware. Under **Settings** > **Surfaces** turn **OFF** "Enable connected Mirabox Stream Dock devices" (and optionally the Elgato option if you have no Stream Deck).
-
-## Part 3: Installing the Bridge
-
-Double-click `setup.cmd` (installs dependencies, creates `.env`, offers auto-start), or by hand:
-
-Double-click `setup.cmd` (installs dependencies, creates `.env`, offers auto-start), or by hand:
-
-```text
-cd path\to\ajazz-bridge
-npm install
-```
-
-## Part 4: Configuration (.env file)
-
-Copy `.env.example` to `.env` and uncomment what you want to change. Every setting is optional; unknown or invalid values are reported in the log at startup and the default is used.
-
-| Setting                                                                                                                     | Default                        | Purpose                                                                                                                                                                                                                                                                                                                                                                                                       |
-| :-------------------------------------------------------------------------------------------------------------------------- | :----------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `COMPANION_HOST` / `COMPANION_PORT`                                                                                         | `127.0.0.1` / `16622`          | Where Companion runs. Change the host if Companion is on another machine.                                                                                                                                                                                                                                                                                                                                     |
-| `HID_WRITE_DELAY_MS`                                                                                                        | `0`                            | Pause between USB image packets. If buttons look torn or half drawn, try `1`, `2`, `5`.                                                                                                                                                                                                                                                                                                                       |
-| `AKP05_IMAGE_SIZE`                                                                                                          | `112`                          | Bitmap size requested from Companion (`72` or `112`).                                                                                                                                                                                                                                                                                                                                                         |
-| `AKP05_JPEG_QUALITY` / `AKP05_STRIP_JPEG_QUALITY`                                                                           | `75`                           | JPEG quality (40-100) for keys / the touch strip.                                                                                                                                                                                                                                                                                                                                                             |
-| `AKP05_STRIP_EDGE_PADDING`                                                                                                  | `0`                            | Pixels of black between the strip edge and the outer icons.                                                                                                                                                                                                                                                                                                                                                   |
-| `AKP05_STRIP_BATCH_MS`                                                                                                      | `20`                           | The four strip icons arriving within this window become one upload.                                                                                                                                                                                                                                                                                                                                           |
-| `BRIDGE_AUTO_UP_MS`                                                                                                         | `50`                           | Synthetic key-up delay for touch zones, swipes and dial pushes.                                                                                                                                                                                                                                                                                                                                               |
-| `BRIDGE_SWIPE_SWAP`                                                                                                         | `0`                            | `1` swaps the swipe left / right assignment.                                                                                                                                                                                                                                                                                                                                                                  |
-| `BRIDGE_ENCODER_ACCEL`                                                                                                      | `1`                            | Repeat fast same-direction dial ticks N times (max 10). `BRIDGE_ENCODER_ACCEL_WINDOW_MS` sets "fast" (default 80).                                                                                                                                                                                                                                                                                            |
-| `BRIDGE_IDLE_OFF_MINUTES`                                                                                                   | `0`                            | Blank the displays after N idle minutes; any input wakes them.                                                                                                                                                                                                                                                                                                                                                |
-| `BRIDGE_IDLE_DIM_PERCENT`                                                                                                   | `0`                            | Dim to this brightness when idle instead of fully off.                                                                                                                                                                                                                                                                                                                                                        |
-| `BRIDGE_SHIFT_ROTATE`                                                                                                       | `0`                            | Press-and-rotate: turning a dial while holding its push sends the turn to Companion row 4 (`4/0` ... `4/3`; the surface becomes 5 rows). A plain push clicks on release.                                                                                                                                                                                                                                      |
-| `BRIDGE_KEY_BRIGHTNESS`                                                                                                     | _(none)_                       | Per-key brightness applied to the image, e.g. `0:60,5:80` (Companion key index : percent).                                                                                                                                                                                                                                                                                                                    |
-| `BRIDGE_TOUCH_HOLD` / `BRIDGE_TOUCH_HOLD_MS`                                                                                | `0` / `200`                    | Keep a touch zone pressed while the firmware keeps sending touch reports; released this long after the last one. **Verified on the AKP05E: the firmware sends exactly one report per touch (no repeats, no release), so this only lengthens the click to the configured time; it cannot detect a real hold.** Kept for other firmware; check yours with `npm run probe` (it prints the time between reports). |
-| `BRIDGE_DIAL_PUSH_HOLD`                                                                                                     | `0`                            | Dial pushes send real press/release so Companion long-press works.                                                                                                                                                                                                                                                                                                                                            |
-| `BRIDGE_KEEPALIVE_MS`, `BRIDGE_PING_INTERVAL_MS`, `BRIDGE_LINK_TIMEOUT_MS`, `BRIDGE_RECONNECT_MAX_MS`, `BRIDGE_HID_SCAN_MS` | see `.env.example`             | Timing of the USB keepalive, Companion ping, dead-link detection, reconnect backoff and USB rescans.                                                                                                                                                                                                                                                                                                          |
-| `LOG_LEVEL`, `LOG_DIR`, `LOG_MAX_BYTES`, `LOG_BACKUPS`                                                                      | `info`, bridge folder, 5 MB, 3 | `bridge.log` rotates at the size limit. `LOG_LEVEL=debug` logs every frame and packet.                                                                                                                                                                                                                                                                                                                        |
-| `BRIDGE_NO_TRAY`                                                                                                            | `0`                            | `1` disables the tray icon.                                                                                                                                                                                                                                                                                                                                                                                   |
-
-## Part 5: Ajazz AKP05 Mapping Guide
-
-Companion sees the AKP05 as a **5-column by 4-row** grid (20 keys):
-
-| Physical Feature                     | Companion Row | Companion Buttons (Row/Col)        |
-| :----------------------------------- | :------------ | :--------------------------------- |
-| **Top Row (Main)**                   | Row 0         | `0/0` … `0/4`                      |
-| **Middle Row (Main)**                | Row 1         | `1/0` … `1/4`                      |
-| **Touch Strip (LCD)**                | Row 2         | `2/0`, `2/1`, `2/2`, `2/3`         |
-| **Touch Strip Swipe Left**           | Row 2         | `2/4` _(press)_                    |
-| **Rotary Dials 1-4 (left to right)** | Row 3         | `3/0` … `3/3` _(push, rotate L/R)_ |
-| **Touch Strip Swipe Right**          | Row 3         | `3/4` _(press)_                    |
-
-Assign dial turns in Companion's **Rotary Actions** tab on the dial's button (e.g. `3/0`).
-
-**Touch strip layout:** the four strip icons are spread across the 800 px strip so the outer two sit flush with the left and right edges and the inner two are evenly spaced, lining each icon up with the dial beneath it. `AKP05_STRIP_EDGE_PADDING` pulls them inwards.
+Assign dial turns in Companion's **Rotary Actions** tab on the dial's button (for example `3/0`). The four strip icons are spread across the 800 px strip, outer two flush to the edges, so each icon sits over its dial:
 
 ```text
- 800 px touch strip (as drawn, before the 180° panel rotation is accounted for by the bridge)
-
  |<-112->|                                                   |<-112->|
  +-------+     +-------+           +-------+     +-------+
  | key   |     | key   |           | key   |     | key   |      Companion keys 2/0  2/1  2/2  2/3
  | 2/0   |     | 2/1   |           | 2/2   |     | 2/3   |      (touch_1 ... touch_4)
  +-------+     +-------+           +-------+     +-------+
- x=0           x=229               x=459         x=688          icon left edges; outer icons flush to the edges
+ x=0           x=229               x=459         x=688          icon left edges on the 800 px strip
     (o)           (o)                 (o)           (o)         dial 1       dial 2        dial 3       dial 4
 ```
 
-## Part 6: Running the Bridge
+## Running it everywhere
 
-```text
-node index.js
-```
+| Platform            | Setup                                                                                                           | Start at login                                      |
+| :------------------ | :-------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------- |
+| **Windows**         | `setup.cmd` or `npm install`                                                                                    | `npm run install-startup` (Startup-folder launcher) |
+| **macOS**           | `npm install`; allow _Input Monitoring_ if macOS asks                                                           | `npm run install-startup` (launchd agent)           |
+| **Linux**           | `npm install`; `node scripts/udev-rules.js \| sudo tee /etc/udev/rules.d/99-ajazz-bridge.rules`, reload, replug | `npm run install-startup` (systemd user service)    |
+| **Docker / Unraid** | `docker compose up -d`, or the Unraid template in `deploy/unraid/`                                              | container restart policy                            |
 
-A tray icon appears. Its menu shows status (deck and Companion connection) and offers **Open log**, **Open folder**, **Reconnect**, **Start at login** and **Quit**.
+Step-by-step instructions, USB permissions and container passthrough are in [docs/PLATFORMS.md](docs/PLATFORMS.md). A portable Windows bundle that needs no Node install can be built with `npm run package`.
 
-- If the bridge is started twice, the second copy exits immediately (single-instance lock).
-- Unplug and replug the deck at any time: the bridge removes the surface from Companion, then re-registers it once the deck is back.
-- If Companion is not running, the bridge keeps retrying with a growing delay (3 s up to 30 s).
+## Configuration
 
-## Part 7: Windows Auto-Start
+Everything is optional and set in `.env` (or environment variables in a container). The common ones:
 
-Either use the tray item **Start at login**, or:
+| Setting                             | Default               | Purpose                                                               |
+| :---------------------------------- | :-------------------- | :-------------------------------------------------------------------- |
+| `COMPANION_HOST` / `COMPANION_PORT` | `127.0.0.1` / `16622` | Where Companion's Satellite API is                                    |
+| `HID_WRITE_DELAY_MS`                | `0`                   | Raise to `1`, `2`, `5` if buttons look torn or half drawn             |
+| `LOG_LEVEL`                         | `info`                | `debug` logs every frame and packet                                   |
+| `BRIDGE_NO_TRAY`                    | auto                  | `1` hides the tray icon (default on headless Linux and in containers) |
 
-```text
-npm run install-startup      (npm run uninstall-startup to remove)
-```
-
-This puts a small launcher in your Startup folder that runs `launch-bridge.vbs`, which starts `supervisor.js` in a hidden window. The supervisor restarts the bridge if it ever crashes and stops when you choose **Quit**.
-
-## Part 8: Adding or verifying a device
-
-Each product is one entry in `devices.js` (`SUPPORTED_DEVICES`): USB ids, grid size, packet size, init sequence and a layout (event → Companion key, key → draw slot, touch-strip geometry). Nothing else names a product. To check a device:
-
-1.  `npm run probe` prints the raw input reports; press every control and compare with `parser.js` (`ACTIONS`).
-2.  Set `tested: true` on the profile once everything works, and update the table above.
-
-## Part 9: macOS, Linux and Unraid
-
-The bridge must run on the machine the deck is plugged into. Companion can be anywhere on the network: set `COMPANION_HOST` to its address (and enable its Satellite API).
-
-### macOS
-
-1.  Install Node.js 20+ (`brew install node`), then `npm install` in this folder and copy `.env.example` to `.env`.
-2.  `node index.js`. A menu-bar icon appears (set `BRIDGE_NO_TRAY=1` to hide it). macOS may ask to allow **Input Monitoring** for your terminal/Node the first time it reads the deck.
-3.  Start at login: `npm run install-startup` (creates a launchd agent, `~/Library/LaunchAgents/com.ajazz.bridge.plist`) or use **Start at login** in the menu. Remove with `npm run uninstall-startup`.
-
-### Linux (desktop or server)
-
-1.  Install Node.js 20+ and, to build the USB module if no prebuilt binary matches: `sudo apt install libudev-dev libusb-1.0-0-dev build-essential`. Then `npm install`.
-2.  Let your user open the deck (otherwise you get a permission error):
-    ```text
-    npm run udev | sudo tee /etc/udev/rules.d/99-ajazz-bridge.rules
-    sudo udevadm control --reload && sudo udevadm trigger     # then unplug and replug the deck
-    ```
-    The rules grant the logged-in desktop user (`uaccess`) and the `plugdev` group. On a headless server add your service user to `plugdev`.
-3.  `node index.js`. The tray icon is only shown when a display server is available (it is off by default over SSH, on servers and in containers; `BRIDGE_NO_TRAY=0` forces it on).
-4.  Start at login/boot: `npm run install-startup` creates a systemd **user** service. Then `systemctl --user start ajazz-bridge`, and `loginctl enable-linger $USER` if it should run without you being logged in. Logs: `journalctl --user -u ajazz-bridge` and `bridge.log`.
-
-### Docker and Unraid
-
-A ready-made image is in the repo (`Dockerfile`, `docker-compose.yml`). It is configured entirely with environment variables; logs go to `/config`.
-
-```text
-docker build -t ajazz-companion-bridge .
-docker run -d --name ajazz-bridge --restart unless-stopped --network host \
-  -e COMPANION_HOST=127.0.0.1 -e COMPANION_PORT=16622 -v $PWD/config:/config \
-  --device=/dev/hidraw0 ajazz-companion-bridge
-```
-
-The deck shows up as `/dev/hidrawN` (`ls -l /dev/hidraw*`; `udevadm info -a /dev/hidrawN | grep -i idVendor`). Pass that device in with `--device`, or use `--privileged` if the number changes between boots. Check the connection with `docker logs ajazz-bridge`: you should see `[HID] Secured …` and `ADD-DEVICE OK`.
-
-**Unraid:** copy `deploy/unraid/ajazz-bridge.xml` to `/boot/config/plugins/dockerMan/templates-user/`, then **Docker > Add Container > ajazz-companion-bridge**. Set **Companion host** to the Unraid IP if Companion is another container (or the other machine's IP). The template uses `--privileged` for USB access; to avoid it, switch Privileged off and add `--device=/dev/hidrawN` under Extra Parameters. Build the image on Unraid first (`docker build -t ajazz-companion-bridge /path/to/ajazz-bridge`) and set the template's Repository to `ajazz-companion-bridge`, or push a `v*` tag to your GitHub fork to publish it to `ghcr.io` with the included workflow. If the deck is plugged into another PC instead, run the bridge on that PC and point it at Unraid's Companion.
-
-What has been verified: install, lint and the test suite on Linux (Debian, Node 22); the Docker image builds, starts, connects to a Companion Satellite server and tolerates a read-only filesystem; the generated systemd unit passes `systemd-analyze verify`; the launchd plist is well-formed XML. Not verified: a real deck on Linux, macOS or Unraid (only Windows with an AKP05E has been tried on hardware), and USB passthrough into a container.
-
-## Development
-
-```text
-npm test            # unit + integration tests (mock Companion server, fake USB device, real image worker)
-npm run lint
-npm run format
-```
-
-## Acknowledgments
-
-Built on the reverse engineering and protocol work of:
-
-- [ambiso/opendeck-akp05](https://github.com/ambiso/opendeck-akp05)
-- [4ndv/mirajazz](https://github.com/4ndv/mirajazz)
+Per-key dimming, idle dim/off, dial acceleration, press-and-rotate, swipe swap, timings and the rest are listed in [docs/CONFIGURATION.md](docs/CONFIGURATION.md) and annotated in `.env.example`. Unknown or invalid settings are reported in the log at startup.
 
 ## Troubleshooting
 
-| Symptom                                   | What to do                                                                                                                                  |
-| :---------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------ |
-| Device does not light up                  | Close the manufacturer's software; only one program can own the USB device.                                                                 |
-| Companion shows "Device exists elsewhere" | Another copy of the bridge (or Companion's own Mirabox driver) holds that id. Quit other copies and disable the native driver in Companion. |
-| Tray says "Companion offline"             | Check `COMPANION_HOST`, `COMPANION_PORT` and that the Satellite API is enabled.                                                             |
-| Buttons tear or draw halfway              | Raise `HID_WRITE_DELAY_MS`.                                                                                                                 |
-| Need more detail                          | Set `LOG_LEVEL=debug`, reproduce, then use tray > **Open log**.                                                                             |
-| Settings seem ignored                     | The log lists unrecognised or invalid settings at startup (`[CONFIG]`).                                                                     |
+| Symptom                                  | What to do                                                                                                                       |
+| :--------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------- |
+| Deck does not light up                   | Close the manufacturer's software; only one program should own the device. On Linux install the udev rules.                      |
+| Companion says "Device exists elsewhere" | Another copy of the bridge (or Companion's own Mirabox driver) holds that id. Quit the other copy and disable the native driver. |
+| Tray says "Companion offline"            | Check `COMPANION_HOST`, `COMPANION_PORT` and that the Satellite API is enabled.                                                  |
+| Buttons tear or draw halfway             | Raise `HID_WRITE_DELAY_MS`.                                                                                                      |
+| A control does nothing                   | Run `npm run probe`, press it, and compare the report with `parser.js`; attach the output to an issue.                           |
+| Need more detail                         | Set `LOG_LEVEL=debug`, reproduce, then open the log from the tray menu (or `bridge.log` in the bridge folder).                   |
+
+## Documentation
+
+- [docs/PLATFORMS.md](docs/PLATFORMS.md): Windows, macOS, Linux, Docker and Unraid setup.
+- [docs/CONFIGURATION.md](docs/CONFIGURATION.md): every setting.
+- [docs/DEVICES.md](docs/DEVICES.md): supported devices and how to add or verify one.
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): how the code fits together.
+- [CONTRIBUTING.md](CONTRIBUTING.md): tests, lint and commit conventions. [CHANGELOG.md](CHANGELOG.md): release history.
+
+## Acknowledgments
+
+Built on the reverse engineering and protocol work of [ambiso/opendeck-akp05](https://github.com/ambiso/opendeck-akp05) and [4ndv/mirajazz](https://github.com/4ndv/mirajazz). Licensed under the [MIT License](LICENSE).

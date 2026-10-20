@@ -16,7 +16,15 @@
     "package": "node scripts/package.js",
     "udev": "node scripts/udev-rules.js"
   },
-  "keywords": [],
+  "keywords": [
+    "bitfocus-companion",
+    "companion-satellite",
+    "ajazz",
+    "mirabox",
+    "akp05",
+    "stream-deck",
+    "macro-pad"
+  ],
   "author": "Benjamin Dvortsis",
   "license": "MIT",
   "type": "commonjs",
@@ -34,5 +42,13 @@
   },
   "engines": {
     "node": ">=20"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dvortsis/ajazz-companion-bridge.git"
+  },
+  "bugs": {
+    "url": "https://github.com/dvortsis/ajazz-companion-bridge/issues"
+  },
+  "homepage": "https://github.com/dvortsis/ajazz-companion-bridge#readme"
 }
